@@ -21,6 +21,10 @@ struct type_addr convert(char ip[], int port) {
         ((struct sockaddr_in *)&res.addr)->sin_port = htons(port);
         res.type = AF_INET;
     }
+
+    res.ignore = false;
+    res.end = false;
+
     return res;
 }
 
@@ -38,13 +42,15 @@ struct type_addr *parse(const char *file_name) {
     char ip[100];
     int port;
 
-    for (size_t i = 0; fscanf(file, "%[^|]|%d\n", ip, &port) != EOF; i++) {
-        if (i > alloc_mem) {
+    size_t i;
+    for (i = 0; fscanf(file, "%[^|]|%d\n", ip, &port) != EOF; i++) {
+        if (i >= alloc_mem) {
             res = realloc(res, alloc_mem * 3);
         }
 
         res[i] = convert(ip, port);
     }
+    res[i + 1].end = true;
 
     if (fclose(file) == EOF) {
         perror("Error fclose");
