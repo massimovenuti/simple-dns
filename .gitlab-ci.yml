@@ -1,0 +1,33 @@
+stages:
+  - build
+  - test
+
+image: gcc
+
+build-client:
+  stage: build
+  before_script:
+    - apt update && apt -y install make
+  script:
+    - make client-build
+  artifacts:
+    paths:
+      - ./client/obj
+      - ./client/bin
+
+build-serveur:
+  stage: build
+  before_script:
+    - apt update && apt -y install make
+  script:
+    - make serveur-build
+  artifacts:
+    paths:
+      - ./serveur/obj
+      - ./serveur/bin
+
+test-client:
+  stage: test
+  script:
+    - cd client
+    - ./test/check.sh

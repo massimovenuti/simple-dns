@@ -16,11 +16,11 @@ SRC = $(wildcard $(C_REP)*.c)
 
 OBJ = $(SRC:$(C_REP)%.c=%.o)
 
-all: $(EXE)
+all: $(B_REP)$(EXE)
 
-$(EXE) : $(OBJ)
+$(B_REP)$(EXE) : $(OBJ)
 	mkdir -p $(B_REP)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(B_REP)$@ $(patsubst %.o, $(O_REP)%.o, $^)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(patsubst %.o, $(O_REP)%.o, $^)
 
 %.o : %.c
 	mkdir -p $(O_REP)
