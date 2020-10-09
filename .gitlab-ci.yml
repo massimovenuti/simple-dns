@@ -34,7 +34,7 @@ build-serveur:
 
 test-client:
   stage: test
-  needs: ["build-client"]
   script:
     - cd client
     - ./test/check.sh
+  needs: ["build-client"]
