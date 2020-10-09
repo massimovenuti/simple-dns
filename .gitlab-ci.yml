@@ -14,6 +14,9 @@ build-client:
     paths:
       - ./client/obj
       - ./client/bin
+  only:
+    changes:
+      - client/**/*
 
 build-serveur:
   stage: build
@@ -25,9 +28,13 @@ build-serveur:
     paths:
       - ./serveur/obj
       - ./serveur/bin
+  only:
+    changes:
+      - serveur/**/*
 
 test-client:
   stage: test
+  needs: [build-client]
   script:
     - cd client
     - ./test/check.sh
