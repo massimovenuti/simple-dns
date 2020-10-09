@@ -38,3 +38,6 @@ test-client:
     - cd client
     - ./test/check.sh
   needs: ["build-client"]
+  only:
+    changes:
+      - client/**/*
