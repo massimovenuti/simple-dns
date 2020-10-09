@@ -8,11 +8,11 @@
 
 #define TABSIZE 100
 
-struct type_addr {
-    sa_family_t type;
+struct addr_with_flag {
     struct sockaddr addr;
     bool ignore;
     bool end;
 };
 
-struct type_addr *parse(const char *file_name);
+void convert(char ip[], int port, struct sockaddr *dst);
+struct addr_with_flag *parse(const char *file_name);

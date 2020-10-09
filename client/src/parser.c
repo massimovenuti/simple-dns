@@ -1,13 +1,14 @@
 #include "parser.h"
 
-struct type_addr convert(char ip[], int port) {
-    struct type_addr res;
-    int chek = inet_pton(AF_INET, ip, &((struct sockaddr_in *)&res.addr)->sin_addr);
-    if (chek == -1) {
+void convert(char ip[], int port, struct sockaddr *dst) {
+    int chek;
+    struct sockaddr_in *ipV4addr = (struct sockaddr_in *)(&dst);
+    if ((chek = inet_pton(AF_INET, ip, &ipV4addr->sin_addr)) == -1) {
         perror("Error inet_pton_V4");
         exit(EXIT_FAILURE);
     } else if (chek == 0) {
-        if ((chek = inet_pton(AF_INET6, ip, &((struct sockaddr_in6 *)&res.addr)->sin6_addr)) == -1) {
+        struct sockaddr_in6 *ipV6addr = (struct sockaddr_in6 *)(&dst);
+        if ((chek = inet_pton(AF_INET6, ip, &ipV6addr->sin6_addr)) == -1) {
             perror("Error inet_pton_V6");
             exit(EXIT_FAILURE);
         } else if (chek == 0) {
@@ -15,22 +16,17 @@ struct type_addr convert(char ip[], int port) {
             exit(EXIT_FAILURE);
         }
 
-        ((struct sockaddr_in6 *)&res.addr)->sin6_port = htons(port);
-        res.type = AF_INET6;
+        ipV6addr->sin6_port = htons(port);
+        ipV6addr->sin6_family = AF_INET6;
     } else {
-        ((struct sockaddr_in *)&res.addr)->sin_port = htons(port);
-        res.type = AF_INET;
+        ipV4addr->sin_port = htons(port);
+        ipV4addr->sin_family = AF_INET;
     }
-
-    res.ignore = false;
-    res.end = false;
-
-    return res;
 }
 
-struct type_addr *parse(const char *file_name) {
-    struct type_addr *res = malloc(TABSIZE * sizeof(struct type_addr));
-    size_t alloc_mem = TABSIZE * sizeof(struct type_addr);
+struct addr_with_flag *parse(const char *file_name) {
+    struct addr_with_flag *res = malloc(TABSIZE * sizeof(struct addr_with_flag));
+    size_t alloc_mem = TABSIZE * sizeof(struct addr_with_flag);
 
     FILE *file;
 
@@ -48,7 +44,9 @@ struct type_addr *parse(const char *file_name) {
             res = realloc(res, alloc_mem * 3);
         }
 
-        res[i] = convert(ip, port);
+        convert(ip, port, &res[i].addr);
+        res[i].end = false;
+        res[i].ignore = false;
     }
     res[i + 1].end = true;
 

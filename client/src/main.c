@@ -5,7 +5,7 @@ int main(int argc, char const *argv[]) {
         fprintf(stderr, "Usage: <path of config file>");
     }
 
-    struct type_addr *tab_addr;
+    struct addr_with_flag *tab_addr;
     tab_addr = parse(argv[1]);
 
     int soc_v4, soc_v6;
@@ -22,13 +22,13 @@ int main(int argc, char const *argv[]) {
     scanf("%s", req);
     for (int i = 0; !tab_addr[i].end; i++) {
         printf("i: %d\nend: %d\n", i, tab_addr[i].end);
-        if (tab_addr[i].type == AF_INET) {
+        if (tab_addr[i].addr.sa_family == AF_INET) {
             if (sendto(soc_v4, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(tab_addr[i].addr)) == -1) {
                 perror("Error sendto V4");
                 exit(EXIT_FAILURE);
             }
         }
-        else if (tab_addr[i].type == AF_INET6) {
+        else if (tab_addr[i].addr.sa_family == AF_INET6) {
             if (sendto(soc_v6, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(tab_addr[i].addr)) == -1) {
                 perror("Error sendto V6");
                 exit(EXIT_FAILURE);
