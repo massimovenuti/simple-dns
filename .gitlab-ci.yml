@@ -41,3 +41,13 @@ test-client:
   only:
     changes:
       - client/**/*
+
+test-serveur:
+  stage: test
+  script:
+    - cd serveur
+    - ./test/check.sh
+  needs: ["build-serveur"]
+  only:
+    changes:
+      - serveur/**/*
