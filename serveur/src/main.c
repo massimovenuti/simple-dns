@@ -5,12 +5,12 @@ void* processes_request_v4(void* arg) {
     char req[512];
     struct sockaddr_in src_addr;
     socklen_t len = sizeof(struct sockaddr_in);
-    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, &len) == -1) {
+    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len) == -1) {
         perror("Error recvfrom V4");
         exit(EXIT_FAILURE);
     }
 
-    if (sendto(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, len) == -1) {
+    if (sendto(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, len) == -1) {
         perror("Error sendto V4");
         exit(EXIT_FAILURE);
     }
@@ -24,12 +24,12 @@ void* processes_request_v6(void* arg) {
     char req[512];
     struct sockaddr_in6 src_addr;
     socklen_t len = sizeof(struct sockaddr_in6);
-    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, &len) == -1) {
+    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len) == -1) {
         perror("Error recvfrom V6");
         exit(EXIT_FAILURE);
     }
 
-    if (sendto(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, len) == -1) {
+    if (sendto(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, len) == -1) {
         perror("Error sendto V6");
         exit(EXIT_FAILURE);
     }
@@ -125,10 +125,22 @@ int main(int argc, char const* argv[]) {
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
             scanf("%s", str);
             if (!strcmp(str, "stop")) {
+                sleep(1);
                 if ((errno = pthread_attr_destroy(&thread_attr)) > 0) {
                     perror("pthread_attr_destroy");
                     exit(EXIT_FAILURE);
                 }
+
+                if (close(soc_v4) == -1) {
+                    perror("close V4");
+                    exit(EXIT_FAILURE);
+                }
+
+                if (close(soc_v6) == -1) {
+                    perror("close V6");
+                    exit(EXIT_FAILURE);
+                }
+
                 exit(EXIT_SUCCESS);
             }
         }
