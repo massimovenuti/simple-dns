@@ -1,16 +1,55 @@
 #include "main.h"
 
-int main(int argc, char const *argv[]) {
+void* processes_request_v4(void* arg) {
+    struct thread_arg info = *(struct thread_arg*)arg;
+    char req[512];
+    struct sockaddr_in src_addr;
+    socklen_t len = sizeof(struct sockaddr_in);
+    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, &len) == -1) {
+        perror("Error recvfrom V4");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sendto(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, len) == -1) {
+        perror("Error sendto V4");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("ok v4\n");
+    return NULL;
+}
+
+void* processes_request_v6(void* arg) {
+    struct thread_arg info = *(struct thread_arg*)arg;
+    char req[512];
+    struct sockaddr_in6 src_addr;
+    socklen_t len = sizeof(struct sockaddr_in6);
+    if (recvfrom(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, &len) == -1) {
+        perror("Error recvfrom V6");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sendto(info.soc, req, 512, 0, (struct sockaddr *)&src_addr, len) == -1) {
+        perror("Error sendto V6");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("ok v6\n");
+    return NULL;
+}
+
+int main(int argc, char const* argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: <port> <path of config file>");
+        exit(EXIT_FAILURE);
     }
 
     int soc_v4, soc_v6;
-    if ((soc_v4 = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
+    if ((soc_v4 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         perror("Error Socket V4");
         exit(EXIT_FAILURE);
     }
-    if ((soc_v6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP)) == -1) {
+    if ((soc_v6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         perror("Error Socket V6");
         exit(EXIT_FAILURE);
     }
@@ -30,15 +69,31 @@ int main(int argc, char const *argv[]) {
     listen_addr_v6.sin6_addr = in6addr_any;
     listen_addr_v6.sin6_port = htons(atoi(argv[1]));
 
-    if (bind(soc_v4, (struct sockaddr *)&listen_addr_v4, sizeof(listen_addr_v4)) == -1) {
+    if (bind(soc_v4, (struct sockaddr*)&listen_addr_v4, sizeof(listen_addr_v4)) == -1) {
         perror("Error bind V4");
         exit(EXIT_FAILURE);
     }
 
-    if (bind(soc_v6, (struct sockaddr *)&listen_addr_v6, sizeof(listen_addr_v6)) == -1) {
+    if (bind(soc_v6, (struct sockaddr*)&listen_addr_v6, sizeof(listen_addr_v6)) == -1) {
         perror("Error bind V6");
         exit(EXIT_FAILURE);
     }
+
+    pthread_attr_t thread_attr;
+    if ((errno = pthread_attr_init(&thread_attr)) > 0) {
+        perror("pthread_attr_init");
+        exit(EXIT_FAILURE);
+    }
+    if ((errno = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED)) > 0) {
+        perror("pthread_attr_setdetachstate");
+        exit(EXIT_FAILURE);
+    }
+
+    pthread_t tid;
+
+    void* tab = NULL;
+    struct thread_arg arg_v4 = {soc_v4, tab};
+    struct thread_arg arg_v6 = {soc_v6, tab};
 
     fd_set ensemble;
     bool goon = true;
@@ -56,14 +111,24 @@ int main(int argc, char const *argv[]) {
         }
 
         if (FD_ISSET(soc_v4, &ensemble)) {
-            /* code */
+            if ((errno = pthread_create(&tid, &thread_attr, processes_request_v4, &arg_v4)) > 0) {
+                perror("pthread_attr_setdetachstate");
+                exit(EXIT_FAILURE);
+            }
         }
         if (FD_ISSET(soc_v6, &ensemble)) {
-            /* code */
+            if ((errno = pthread_create(&tid, &thread_attr, processes_request_v6, &arg_v6)) > 0) {
+                perror("pthread_attr_setdetachstate");
+                exit(EXIT_FAILURE);
+            }
         }
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
             scanf("%s", str);
             if (!strcmp(str, "stop")) {
+                if ((errno = pthread_attr_destroy(&thread_attr)) > 0) {
+                    perror("pthread_attr_destroy");
+                    exit(EXIT_FAILURE);
+                }
                 exit(EXIT_SUCCESS);
             }
         }
