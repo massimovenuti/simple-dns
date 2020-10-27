@@ -15,4 +15,4 @@ struct addr_with_flag {
 };
 
 void convert(char ip[], int port, struct sockaddr *dst);
-struct addr_with_flag *parse(const char *file_name);
+struct addr_with_flag *parse_conf(const char *file_name);

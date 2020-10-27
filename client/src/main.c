@@ -6,7 +6,7 @@ int main(int argc, char const *argv[]) {
     }
 
     struct addr_with_flag *tab_addr;
-    tab_addr = parse(argv[1]);
+    tab_addr = parse_conf(argv[1]);
 
     int soc_v4, soc_v6;
     if ((soc_v4 = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {

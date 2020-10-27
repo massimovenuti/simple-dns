@@ -24,7 +24,7 @@ void convert(char ip[], int port, struct sockaddr *dst) {
     }
 }
 
-struct addr_with_flag *parse(const char *file_name) {
+struct addr_with_flag *parse_conf(const char *file_name) {
     struct addr_with_flag *res = malloc(TABSIZE * sizeof(struct addr_with_flag));
     size_t alloc_mem = TABSIZE * sizeof(struct addr_with_flag);
 

@@ -15,7 +15,7 @@ void* processes_request_v4(void* arg) {
         exit(EXIT_FAILURE);
     }
 
-    printf("ok v4\n");
+    printf("ok v4\n"); //for DEBUG
     return NULL;
 }
 
@@ -30,7 +30,7 @@ void* processes_request_v6(void* arg) {
     }
 
     if (sendto(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, len) == -1) {
-        perror("Error sendto V6");
+        perror("Error sendto V6"); //for DEBUG
         exit(EXIT_FAILURE);
     }
 
@@ -91,7 +91,7 @@ int main(int argc, char const* argv[]) {
 
     pthread_t tid;
 
-    void* tab = NULL;
+    void* tab = NULL; //modifiter type
     struct thread_arg arg_v4 = {soc_v4, tab};
     struct thread_arg arg_v6 = {soc_v6, tab};
 
