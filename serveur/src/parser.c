@@ -1,19 +1,97 @@
 #include "parser.h"
 
-void **parse_conf(const char *file_name)
+int compare(char *s1, char *s2)
 {
-    (void) file_name;
-    return NULL;
-} //modifiter type de sortie
+    char *tmp = strstr(s1, s2);
+    if (tmp == NULL)
+        return 0;
+    return tmp[0] == '.' ? 1 : s1[strlen(s1) - strlen(tmp) - 1] == '.';
+}
 
-void *parse_req(char *str,size_t len) 
+
+struct name *parse_conf(const char *file_name)
 {
-    (void) str;
-    (void) len;
-    return NULL;
-}//modifiter type de sortie
+    struct name *res;
+    size_t alloc_mem;
+    
+    alloc_mem = TABSIZE * sizeof(struct name);
+    MCHK(res = malloc(alloc_mem));
 
-char *make_res(size_t *len) {
-    (void) len;
-    return NULL;
-} //compléter les agr
+    FILE *file;
+
+    MCHK(file = fopen(file_name, "r"));
+
+    char name[NAMELEN];
+    char ip[IPLEN];
+    char port[PORTLEN];
+
+    size_t i, tmp;
+    for (i = 0; fscanf(file, "%[^|]|%s|%s\n", name, ip, port) != EOF; i++) {
+        if (i >= alloc_mem) {
+            alloc_mem *= 3;
+            MCHK(res = realloc(res, alloc_mem));
+        }
+
+        for (tmp = 0; tmp < i; tmp++) {
+            if (res[tmp].name == name) {
+                MCHK(strcpy(res[tmp].servers[res[tmp].nbserv].ip, ip));
+                MCHK(strcpy(res[tmp].servers[res[tmp].nbserv].port, port));
+                res[tmp].nbserv++;
+            }
+        }
+
+        if (i == tmp) {
+            MCHK(strcpy(res[i].name, name));
+            MCHK(strcpy(res[i].servers[0].ip, ip));
+            MCHK(strcpy(res[i].servers[0].port, port));
+            res[i].nbserv = 1;
+        }
+    }
+    res[i + 1].nbserv = 0;
+    PCHK(fclose(file));
+    return res;
+}
+
+char *parse_req(char *str, size_t len) 
+{
+    char *res;
+    int i;
+    for (i = len; i > 0 && str[i] != '|'; i--);
+    if (i == 0) {
+        fprintf(stderr, "Requête incorrecte\n");
+        exit(EXIT_FAILURE);
+    }
+    MCHK(res = malloc((len - i - 1) * sizeof(char)));
+    MCHK(strcpy(res, &str[i + 1]));
+    return res;
+}
+
+//vérifier l'allocation mémoire
+char *make_res(struct name *names, char *req, size_t *len) {
+    char *res;
+    *len += 3;
+    MCHK(res = malloc(*len));
+    MCHK(strcpy(res, req));
+    MCHK(strcat(res, SEPARATOR));
+
+    int i, j;
+    for (i = 0; names[i].nbserv != 0; i++) {
+        if (compare(req, names[i].name)) {
+            MCHK(strcat(res, SUCCESS));
+            for (j = 0; j < names[i].nbserv; j++) {
+                *len += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
+                MCHK(realloc(res, *len));
+                MCHK(strcat(res, SEPARATOR));
+                MCHK(strcat(res, names[i].name));
+                MCHK(strcat(res, ","));
+                MCHK(strcat(res, names[i].servers[j].ip));
+                MCHK(strcat(res, ","));
+                MCHK(strcat(res, names[i].servers[j].port));
+            }
+        }
+    }
+
+    if (names[i].nbserv == 0)
+        MCHK(strcat(res, FAIL));
+    return res;
+}
