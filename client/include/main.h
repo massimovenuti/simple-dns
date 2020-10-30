@@ -9,6 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "macro.h"
 #include "parser.h"
 
 #define REQ_MAX 512

@@ -12,6 +12,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "macro.h"
+#include "parser.h"
+
 struct thread_arg {
     int soc;
     void *tab_of_addr; //modifiter type

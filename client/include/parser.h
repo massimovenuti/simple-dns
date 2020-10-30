@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include "macro.h"
+
 #define TABSIZE 100
 
 struct addr_with_flag {
