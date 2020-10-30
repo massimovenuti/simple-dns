@@ -17,5 +17,5 @@
 
 struct thread_arg {
     int soc;
-    void *tab_of_addr; //modifiter type
+    struct name *tab_of_addr;
 };

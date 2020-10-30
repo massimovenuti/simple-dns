@@ -5,7 +5,7 @@ int compare(char *s1, char *s2)
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
         return 0;
-    return tmp[0] == '.' ? 1 : s1[strlen(s1) - strlen(tmp) - 1] == '.';
+    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.';
 }
 
 
@@ -26,7 +26,8 @@ struct name *parse_conf(const char *file_name)
     char port[PORTLEN];
 
     size_t i, tmp;
-    for (i = 0; fscanf(file, "%[^|]|%s|%s\n", name, ip, port) != EOF; i++) {
+    for (i = 0; fscanf(file, "%[^|-]|%[^|-]|%s\n", name, ip, port) != EOF; i++) {
+        name[strlen(name)] = 0;
         if (i >= alloc_mem) {
             alloc_mem *= 3;
             MCHK(res = realloc(res, alloc_mem));

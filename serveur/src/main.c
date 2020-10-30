@@ -4,12 +4,17 @@ void* processes_request_v4(void* arg) {
     struct thread_arg info = *(struct thread_arg*)arg;
     char req[512];
     struct sockaddr_in src_addr;
-    socklen_t len = sizeof(struct sockaddr_in);
+    socklen_t len_addr = sizeof(struct sockaddr_in);
+    ssize_t len_req;
 
-    PCHK(recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len));
-    PCHK(sendto(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, len));
+    PCHK((len_req = recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    char* name = parse_req(req, (size_t)len_req);
+    size_t len_res = (size_t)len_req;
+    char* res = make_res(info.tab_of_addr, req, &len_res);
+    PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
 
-    printf("ok v4\n"); //for DEBUG
+    free(name);
+    free(res);
     return NULL;
 }
 
@@ -17,12 +22,17 @@ void* processes_request_v6(void* arg) {
     struct thread_arg info = *(struct thread_arg*)arg;
     char req[512];
     struct sockaddr_in6 src_addr;
-    socklen_t len = sizeof(struct sockaddr_in6);
+    socklen_t len_addr = sizeof(struct sockaddr_in6);
+    ssize_t len_req;
 
-    PCHK(recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len));
-    PCHK(sendto(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, len));
+    PCHK((len_req = recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    char* name = parse_req(req, (size_t)len_req);
+    size_t len_res = (size_t)len_req;
+    char* res = make_res(info.tab_of_addr, req, &len_res);
+    PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
 
-    printf("ok v6\n"); //for DEBUG
+    free(name);
+    free(res);
     return NULL;
 }
 
@@ -58,7 +68,7 @@ int main(int argc, char const* argv[]) {
 
     pthread_t tid;
 
-    void* tab = NULL; //modifiter type
+    struct name* tab = parse_conf(argv[2]);
     struct thread_arg arg_v4 = {soc_v4, tab};
     struct thread_arg arg_v6 = {soc_v6, tab};
 
