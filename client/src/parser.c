@@ -2,11 +2,11 @@
 
 void convert(char ip[], int port, struct sockaddr *dst) {
     int check;
-    struct sockaddr_in *ipV4addr = (struct sockaddr_in *)(&dst);
+    struct sockaddr_in *ipV4addr = (struct sockaddr_in *)(dst);
     PCHK(check = inet_pton(AF_INET, ip, &ipV4addr->sin_addr));
 
     if (check == 0) {
-        struct sockaddr_in6 *ipV6addr = (struct sockaddr_in6 *)(&dst);
+        struct sockaddr_in6 *ipV6addr = (struct sockaddr_in6 *)(dst);
         PCHK(check = inet_pton(AF_INET6, ip, &ipV6addr->sin6_addr));
         if (check == 0) {
             fprintf(stderr, "invalide addrese: %s\n", ip);
@@ -35,7 +35,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     int port;
 
     size_t i;
-    for (i = 0; fscanf(file, "%[^|]|%d\n", ip, &port) != EOF; i++) {
+    for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
         if (i >= alloc_mem) {
             alloc_mem *= 3;
             MCHK(res = realloc(res, alloc_mem));
