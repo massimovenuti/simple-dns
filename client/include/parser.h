@@ -23,7 +23,7 @@ struct res
     char req_name[100];
     int code;
     char name[100];
-    struct addr_with_flag addrs[100];
+    struct addr_with_flag addrs[100]; //passer en dynamique
 };
 
 

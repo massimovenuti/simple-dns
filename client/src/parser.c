@@ -49,3 +49,40 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     PCHK(fclose(file));
     return res;
 }
+
+struct res parse_res(char *res, size_t len) {
+    struct res s_res;
+    char *id[50];
+    char *time[50];
+    char *code[2];
+    char *servers[2000];
+
+    sscanf(res, "%[^|- ] | %[^|- ] | %[^|- ] | %[^|- ] | %s", id, time, s_res.req_name, code, servers);
+
+    s_res.id = atoi(id);
+    s_res.time = (time_t) atoi(time);
+    s_res.code = atoi(code);
+
+    char *token;
+    char name[100];
+    char ip[100];
+    char port[100];
+    int nbaddr = 0;
+    int first = 1;
+
+    token = strtok(servers, "|");
+    while (token != NULL) {
+        sscanf(token, " %[^,- ] , %[^,- ] , %[^,- ] ", name, ip, port);
+        if (first) {
+            strcpy(s_res.name, name);
+            first--;
+        }
+        if (name && ip && port) {
+            convert(ip, atoi(port), &s_res.addrs[nbaddr].addr);
+            nbaddr++;
+        }
+        token = strtok(NULL, "|");
+    }
+
+    return s_res;
+}

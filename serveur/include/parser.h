@@ -22,7 +22,7 @@ struct server {
 
 struct name {
     char name[NAMELEN];
-    struct server servers[MAXSERV];
+    struct server servers[MAXSERV]; //passer en dynamique
     int nbserv;
 };
 
