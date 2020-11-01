@@ -4,7 +4,7 @@ int compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
         return 0;
-    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.';
+    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.'; // erreur 
 }
 
 struct name *parse_conf(const char *file_name) {
