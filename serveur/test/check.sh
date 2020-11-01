@@ -4,7 +4,7 @@ if ! test -x ./bin/serveur; then
 fi
 
 echo "test 1"
-if echo "stop" | ./bin/serveur 4242 test.conf; then
+if echo "stop" | ./bin/serveur 4242 test1.conf; then
   printf "\033[32mSUCCESS\033[0m\n"
    exit 0
 else
