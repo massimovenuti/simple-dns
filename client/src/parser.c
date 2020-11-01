@@ -51,11 +51,12 @@ struct addr_with_flag *parse_conf(const char *file_name) {
 }
 
 struct res parse_res(char *res, size_t len) {
+    (void) len;
     struct res s_res;
-    char *id[50];
-    char *time[50];
-    char *code[2];
-    char *servers[2000];
+    char id[50];
+    char time[50];
+    char code[2];
+    char servers[2000];
 
     sscanf(res, "%[^|- ] | %[^|- ] | %[^|- ] | %[^|- ] | %s", id, time, s_res.req_name, code, servers);
 
@@ -77,7 +78,7 @@ struct res parse_res(char *res, size_t len) {
             strcpy(s_res.name, name);
             first--;
         }
-        if (name && ip && port) {
+        if (name != NULL && ip != NULL && port != NULL) {
             convert(ip, atoi(port), &s_res.addrs[nbaddr].addr);
             nbaddr++;
         }
