@@ -78,7 +78,7 @@ struct res parse_res(char *res, size_t len) {
             strcpy(s_res.name, name);
             first = false;
         }
-        if (*name && *ip && *port) {
+        if (name != NULL && ip != NULL && port != NULL) {
             convert(ip, atoi(port), &s_res.addrs[nbaddr].addr);
             s_res.addrs[nbaddr].ignore = false;
             s_res.addrs[nbaddr].end = false;
