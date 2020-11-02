@@ -21,7 +21,7 @@ char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag
         for (int i = 0; !tab_addr[i].end && !find; i++) {
             if (!tab_addr[i].ignore) {
                 if (tab_addr[i].addr.sa_family == AF_INET) {
-                    PCHK(sendto(soc_v4, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(tab_addr[i].addr)));
+                    PCHK(sendto(soc_v4, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in)));
 
                     struct sockaddr_in src_addr;
                     socklen_t len_addr = sizeof(struct sockaddr_in);
@@ -37,22 +37,32 @@ char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag
                         if (struc_res.id == *id) {
                             if (struc_res.code > 0) {
                                 find = true;
+                                retry = false;
                                 if (!strcmp(name, struc_res.name)) {
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
                                     return "good";
                                 } else {
                                     *id = *id + 1;
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
                                     return resolve(soc_v4, soc_v6, id, name, struc_res.addrs, false);
                                 }
                             } else {
+                                if (free_tab) {
+                                    free(tab_addr);
+                                }
                                 return "Not found";
                             }
                         }
                     }
                 } else if (tab_addr[i].addr.sa_family == AF_INET6) {
-                    PCHK(sendto(soc_v6, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(tab_addr[i].addr)));
+                    PCHK(sendto(soc_v6, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
 
                     struct sockaddr_in6 src_addr;
-                    socklen_t len_addr = sizeof(struct sockaddr_in);
+                    socklen_t len_addr = sizeof(struct sockaddr_in6);
                     ssize_t len_res;
 
                     FD_ZERO(&ensemble);
@@ -61,17 +71,26 @@ char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag
                     PCHK(select(soc_v6 + 1, &ensemble, NULL, NULL, &timeout));
                     if (FD_ISSET(soc_v6, &ensemble)) {
                         PCHK((len_res = recvfrom(soc_v6, res, REQ_MAX, 0, (struct sockaddr *)&src_addr, &len_addr)));
-                         struct res struc_res = parse_res(res, len_res);
+                        struct res struc_res = parse_res(res, len_res);
                         if (struc_res.id == *id) {
                             if (struc_res.code != -1) {
                                 find = true;
                                 if (!strcmp(name, struc_res.name)) {
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
                                     return "good";
                                 } else {
                                     *id = *id + 1;
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
                                     return resolve(soc_v4, soc_v6, id, name, struc_res.addrs, false);
                                 }
                             } else {
+                                if (free_tab) {
+                                    free(tab_addr);
+                                }
                                 return "Not found";
                             }
                         }
