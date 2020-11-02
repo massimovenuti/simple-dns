@@ -9,6 +9,14 @@
 #include "macro.h"
 
 #define TABSIZE 100
+#define INCREASE_COEF 3
+
+#define NAMELEN 256
+#define IPLEN 140
+#define TIMELEN 200
+#define CODELEN 2
+#define IDLEN 129
+#define PORTLEN 10
 
 struct addr_with_flag {
     struct sockaddr addr;
@@ -23,7 +31,7 @@ struct res
     char req_name[100];
     int code;
     char name[100];
-    struct addr_with_flag addrs[100]; //passer en dynamique
+    struct addr_with_flag *addrs; //passer en dynamique
 };
 
 

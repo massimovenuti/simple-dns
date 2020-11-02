@@ -1,18 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "macro.h"
 
 #define TABSIZE 100
-#define MAXSERV 100
+#define INCREASE_COEF 3
+
 #define NAMELEN 256
-#define IPLEN 129
+#define IPLEN 140
 #define PORTLEN 10
 
 #define SUCCESS "1"
 #define FAIL "-1"
-
 #define SEPARATOR "|"
 
 struct server {
@@ -22,8 +23,9 @@ struct server {
 
 struct name {
     char name[NAMELEN];
-    struct server servers[MAXSERV]; //passer en dynamique
-    int nbserv;
+    struct server *servers; //passer en dynamique
+    int nb_servers;
+    int max_servers;
 };
 
 int compare(char *s1, char *s2);

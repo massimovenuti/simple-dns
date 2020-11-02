@@ -22,10 +22,9 @@ void convert(char ip[], int port, struct sockaddr *dst) {
 
 struct addr_with_flag *parse_conf(const char *file_name) {
     struct addr_with_flag *res;
-    size_t alloc_mem;
+    int max_addrs = TABSIZE;
 
-    alloc_mem = TABSIZE * sizeof(struct addr_with_flag);
-    MCHK(res = malloc(alloc_mem));
+    MCHK(res = malloc(max_addrs * sizeof(struct addr_with_flag)));
 
     FILE *file;
 
@@ -34,11 +33,11 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     char ip[100];
     int port;
 
-    size_t i;
+    int i;
     for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
-        if (i >= alloc_mem) {
-            alloc_mem *= 3;
-            MCHK(res = realloc(res, alloc_mem));
+        if (i >= max_addrs) {
+            max_addrs *= INCREASE_COEF;
+            MCHK(res = realloc(res, max_addrs));
         }
         convert(ip, port, &res[i].addr);
         res[i].end = false;
@@ -53,41 +52,52 @@ struct addr_with_flag *parse_conf(const char *file_name) {
 struct res parse_res(char *res, size_t len) {
     (void)len;
     struct res s_res;
-    char id[50];
-    char time[50];
-    char code[2];
-    char servers[2000];
+    char id[IDLEN];
+    char time[TIMELEN];
+    char code[CODELEN];
 
-    sscanf(res, "%[^|- ] | %[^|- ] | %[^|- ] | %[^|- ] | %s", id, time, s_res.req_name, code, servers);
+    sscanf(res, "%[^|- ] | %[^|- ] | %[^|- ] | %[^|- ]", id, time, s_res.req_name, code);
 
     s_res.id = atoi(id);
     s_res.time = (time_t)atoi(time);
     s_res.code = atoi(code);
+    
+    len -= (strlen(id) + strlen(time) + strlen(s_res.req_name) + strlen(code));
 
     char *token;
-    char name[100];
-    char ip[100];
-    char port[100];
-    int nbaddr = 0;
+    char name[NAMELEN];
+    char ip[IPLEN];
+    char port[PORTLEN];
+    int nb_addrs = 0;
+    int max_addrs = TABSIZE;
     bool first = true;
 
-    token = strtok(servers, "|");
-    while (token != NULL) {
-        sscanf(token, " %[^,- ] , %[^,- ] , %[^,- ] ", name, ip, port);
-        if (first) {
-            strcpy(s_res.name, name);
-            first = false;
-        }
-        if (name != NULL && ip != NULL && port != NULL) {
-            convert(ip, atoi(port), &s_res.addrs[nbaddr].addr);
-            s_res.addrs[nbaddr].ignore = false;
-            s_res.addrs[nbaddr].end = false;
-            nbaddr++;
-        }
-        token = strtok(NULL, "|");
-    }
+    token = strtok(res + len, "|");
 
-    s_res.addrs[nbaddr].end = true;
+    if (token == NULL) {
+        s_res.addrs = NULL;
+    } else {
+        s_res.addrs = malloc(max_addrs * sizeof(struct addr_with_flag));
+        do {
+            if (nb_addrs > max_addrs) {
+                max_addrs *= INCREASE_COEF;
+                s_res.addrs = realloc(s_res.addrs, max_addrs * sizeof(struct addr_with_flag));
+            }
+            sscanf(token, " %[^,- ] , %[^,- ] , %[^,- ] ", name, ip, port);
+            if (first) {
+                strcpy(s_res.name, name);
+                first = false;
+            }
+            if (*name && *ip && *port) {
+                convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
+                s_res.addrs[nb_addrs].ignore = false;
+                s_res.addrs[nb_addrs].end = false;
+                nb_addrs++;
+            }
+            token = strtok(NULL, "|");
+        } while (token != NULL);
+        s_res.addrs[nb_addrs].end = true;
+    }
 
     return s_res;
 }

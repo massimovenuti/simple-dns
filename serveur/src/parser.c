@@ -9,10 +9,15 @@ int compare(char *s1, char *s2) {
 
 struct name *parse_conf(const char *file_name) {
     struct name *res;
-    size_t alloc_mem;
+    int max_names = TABSIZE;
 
-    alloc_mem = TABSIZE * sizeof(struct name);
-    MCHK(res = malloc(alloc_mem));
+    MCHK(res = malloc(max_names * sizeof(struct name)));
+
+    for (int i = 0; i < max_names; i++) {
+        res[i].nb_servers = 0;
+        res[i].max_servers = TABSIZE;
+        res[i].servers = NULL;
+    }
 
     FILE *file;
 
@@ -22,34 +27,45 @@ struct name *parse_conf(const char *file_name) {
     char ip[IPLEN];
     char port[PORTLEN];
 
-    size_t i, tmp;
-    int find;
+    int i, tmp;
+    bool found;
     for (i = 0; fscanf(file, "%[^|- ] | %[^|- ] | %s\n", name, ip, port) != EOF; i++) {
-        find = 0;
-        if (i >= alloc_mem) {
-            alloc_mem *= 3;
-            MCHK(res = realloc(res, alloc_mem));
+        found = false;
+        if (i >= max_names) {
+            max_names *= INCREASE_COEF;
+            MCHK(res = realloc(res, max_names * sizeof(struct name)));
+            for (int j = i; j < max_names; j++) {
+                res[j].nb_servers = 0;
+                res[j].max_servers = TABSIZE;
+                res[j].servers = NULL;
+            }
         }
-
         for (tmp = 0; tmp < i; tmp++) {
-            if (!strcmp(res[tmp].name, name)) {
-                find = 1;
-                MCHK(strcpy(res[tmp].servers[res[tmp].nbserv].ip, ip));
-                MCHK(strcpy(res[tmp].servers[res[tmp].nbserv].port, port));
-                res[tmp].nbserv++;
+            found = strcmp(res[tmp].name, name);
+            if (found) {
+                if (res[tmp].nb_servers == 0) {
+                    res[tmp].servers = malloc(res[tmp].max_servers * sizeof(struct server));
+                } 
+                if (res[tmp].nb_servers >= res[tmp].max_servers) {
+                    res[tmp].max_servers *= INCREASE_COEF;
+                    res[tmp].servers = realloc(res[tmp].servers, res[tmp].max_servers * sizeof(struct server));
+                }
+                MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].ip, ip));
+                MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].port, port));
+                res[tmp].nb_servers++;
             }
         }
 
-        if (!find) {
+        if (!found) {
             MCHK(strcpy(res[i].name, name));
             MCHK(strcpy(res[i].servers[0].ip, ip));
             MCHK(strcpy(res[i].servers[0].port, port));
-            res[i].nbserv = 1;
+            res[i].nb_servers = 1;
         } else {
             i--;
         }
     }
-    res[i + 1].nbserv = 0;
+    res[i + 1].nb_servers = 0;
     PCHK(fclose(file));
     return res;
 }
@@ -60,7 +76,7 @@ char *parse_req(char *str, size_t len) {
     for (i = len; i > 0 && str[i] != '|'; i--)
         ;
     if (i == 0) {
-        fprintf(stderr, "Requête incorrecte\n");
+        fprintf(stderr, "Request incorrect\n");
         exit(EXIT_FAILURE);
     }
     MCHK(res = malloc((len - i - 1) * sizeof(char)));
@@ -77,12 +93,12 @@ char *make_res(struct name *names, char *req, size_t *len) {
     MCHK(strcat(res, SEPARATOR));
 
     int i, j;
-    int find = 0;
-    for (i = 0; names[i].nbserv != 0; i++) {
+    bool find = false;
+    for (i = 0; names[i].nb_servers != 0; i++) {
         if (compare(req, names[i].name)) {
-            find = 1;
+            find = true;
             MCHK(strcat(res, SUCCESS));
-            for (j = 0; j < names[i].nbserv; j++) {
+            for (j = 0; j < names[i].nb_servers; j++) {
                 *len += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
                 MCHK(realloc(res, *len));
                 MCHK(strcat(res, SEPARATOR));
