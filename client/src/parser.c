@@ -37,7 +37,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
         if (i >= max_addrs) {
             max_addrs *= INCREASE_COEF;
-            MCHK(res = realloc(res, max_addrs));
+            MCHK(res = realloc(res, max_addrs * sizeof(struct addr_with_flag)));
         }
         convert(ip, port, &res[i].addr);
         res[i].end = false;

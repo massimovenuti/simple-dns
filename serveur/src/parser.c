@@ -65,7 +65,6 @@ struct name *parse_conf(const char *file_name) {
             i--;
         }
     }
-    res[i + 1].nb_servers = 0;
     PCHK(fclose(file));
     return res;
 }
@@ -93,25 +92,25 @@ char *make_res(struct name *names, char *req, size_t *len) {
     MCHK(strcat(res, SEPARATOR));
 
     int i, j;
-    bool find = false;
+    bool found = false;
     for (i = 0; names[i].nb_servers != 0; i++) {
         if (compare(req, names[i].name)) {
-            find = true;
+            found = true;
             MCHK(strcat(res, SUCCESS));
             for (j = 0; j < names[i].nb_servers; j++) {
                 *len += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
                 MCHK(realloc(res, *len));
                 MCHK(strcat(res, SEPARATOR));
                 MCHK(strcat(res, names[i].name));
-                MCHK(strcat(res, ","));
+                MCHK(strcat(res, SUBSEPARATOR));
                 MCHK(strcat(res, names[i].servers[j].ip));
-                MCHK(strcat(res, ","));
+                MCHK(strcat(res, SUBSEPARATOR));
                 MCHK(strcat(res, names[i].servers[j].port));
             }
         }
     }
 
-    if (!find)
+    if (!found)
         MCHK(strcat(res, FAIL));
     return res;
 }

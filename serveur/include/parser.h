@@ -15,6 +15,7 @@
 #define SUCCESS "1"
 #define FAIL "-1"
 #define SEPARATOR "|"
+#define SUBSEPARATOR ","
 
 struct server {
     char ip[IPLEN];
