@@ -43,12 +43,9 @@ struct name *parse_conf(const char *file_name) {
         for (tmp = 0; tmp < i; tmp++) {
             found = strcmp(res[tmp].name, name);
             if (found) {
-                if (res[tmp].nb_servers == 0) {
-                    res[tmp].servers = malloc(res[tmp].max_servers * sizeof(struct server));
-                } 
                 if (res[tmp].nb_servers >= res[tmp].max_servers) {
                     res[tmp].max_servers *= INCREASE_COEF;
-                    res[tmp].servers = realloc(res[tmp].servers, res[tmp].max_servers * sizeof(struct server));
+                    MCHK(res[tmp].servers = realloc(res[tmp].servers, res[tmp].max_servers * sizeof(struct server)));
                 }
                 MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].ip, ip));
                 MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].port, port));
@@ -57,7 +54,9 @@ struct name *parse_conf(const char *file_name) {
         }
 
         if (!found) {
+            
             MCHK(strcpy(res[i].name, name));
+            MCHK(res[i].servers = malloc(res[tmp].max_servers * sizeof(struct server)));
             MCHK(strcpy(res[i].servers[0].ip, ip));
             MCHK(strcpy(res[i].servers[0].port, port));
             res[i].nb_servers = 1;

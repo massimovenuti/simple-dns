@@ -1,6 +1,6 @@
 #include "main.h"
 
-char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab) {
+char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab) {
     char req[REQ_MAX];
     char res[REQ_MAX];
 
@@ -20,79 +20,42 @@ char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag
     do {
         for (int i = 0; !tab_addr[i].end && !find; i++) {
             if (!tab_addr[i].ignore) {
-                if (tab_addr[i].addr.sa_family == AF_INET) {
-                    PCHK(sendto(soc_v4, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in)));
+                PCHK(sendto(soc, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
 
-                    struct sockaddr_in src_addr;
-                    socklen_t len_addr = sizeof(struct sockaddr_in);
+                struct sockaddr_in6 src_addr;
+                socklen_t len_addr = sizeof(struct sockaddr_in6);
 
-                    FD_ZERO(&ensemble);
-                    FD_SET(soc_v4, &ensemble);
+                FD_ZERO(&ensemble);
+                FD_SET(soc, &ensemble);
 
-                    PCHK(select(soc_v4 + 1, &ensemble, NULL, NULL, &timeout));
-                    if (FD_ISSET(soc_v4, &ensemble)) {
-                        ssize_t len_res;
-                        PCHK(len_res = recvfrom(soc_v4, res, REQ_MAX, 0, (struct sockaddr *)&src_addr, &len_addr));
-                        struct res struc_res = parse_res(res, len_res);
-                        if (struc_res.id == *id) {
-                            if (struc_res.code > 0) {
-                                find = true;
-                                retry = false;
-                                if (!strcmp(name, struc_res.name)) {
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    return "good";
-                                } else {
-                                    *id = *id + 1;
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    return resolve(soc_v4, soc_v6, id, name, struc_res.addrs, false);
-                                }
-                            } else {
-                                if (free_tab) {
-                                    free(tab_addr);
-                                }
-                                return "Not found";
-                            }
-                        }
-                    }
-                } else if (tab_addr[i].addr.sa_family == AF_INET6) {
-                    PCHK(sendto(soc_v6, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
-
-                    struct sockaddr_in6 src_addr;
-                    socklen_t len_addr = sizeof(struct sockaddr_in6);
+                PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout));
+                if (FD_ISSET(soc, &ensemble)) {
                     ssize_t len_res;
-
-                    FD_ZERO(&ensemble);
-                    FD_SET(soc_v6, &ensemble);
-
-                    PCHK(select(soc_v6 + 1, &ensemble, NULL, NULL, &timeout));
-                    if (FD_ISSET(soc_v6, &ensemble)) {
-                        PCHK((len_res = recvfrom(soc_v6, res, REQ_MAX, 0, (struct sockaddr *)&src_addr, &len_addr)));
-                        struct res struc_res = parse_res(res, len_res);
-                        if (struc_res.id == *id) {
-                            if (struc_res.code != -1) {
-                                find = true;
-                                if (!strcmp(name, struc_res.name)) {
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    return "good";
-                                } else {
-                                    *id = *id + 1;
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    return resolve(soc_v4, soc_v6, id, name, struc_res.addrs, false);
-                                }
-                            } else {
+                    PCHK(len_res = recvfrom(soc, res, REQ_MAX, 0, (struct sockaddr *)&src_addr, &len_addr));
+                    struct res struc_res = parse_res(res, len_res);
+                    if (struc_res.id == *id) {
+                        if (struc_res.code > 0) {
+                            find = true;
+                            retry = false;
+                            int test = strcmp(name, struc_res.name);
+                            (void)test;
+                            if (!strcmp(name, struc_res.name)) {
                                 if (free_tab) {
                                     free(tab_addr);
                                 }
-                                return "Not found";
+                                return "good";
+                            } else {
+                                *id = *id + 1;
+                                if (free_tab) {
+                                    free(tab_addr);
+                                }
+                                return resolve(soc, id, name, struc_res.addrs, true);
                             }
+                        } else {
+                            if (free_tab) {
+                                free(tab_addr);
+                            }
+                            return "Not found";
                         }
                     }
                 }
@@ -116,13 +79,12 @@ int main(int argc, char const *argv[]) {
     struct addr_with_flag *tab_addr;
     tab_addr = parse_conf(argv[1]);
 
-    int soc_v4, soc_v6;
-    PCHK(soc_v4 = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP));
-    PCHK(soc_v6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
+    int soc;
+    PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
 
     char name[NAME_MAX];
     scanf("%s", name);
     int id = 0;
-    printf("%s\n", resolve(soc_v4, soc_v6, &id, name, tab_addr, true));
+    printf("%s\n", resolve(soc, &id, name, tab_addr, true));
     exit(EXIT_SUCCESS);
 }

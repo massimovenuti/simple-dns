@@ -15,4 +15,4 @@
 #define REQ_MAX 512
 #define NAME_MAX 124
 
-char *resolve(int soc_v4, int soc_v6, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab);
+char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab);
