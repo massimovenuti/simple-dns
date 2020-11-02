@@ -20,7 +20,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
     do {
         for (int i = 0; !tab_addr[i].end && !find; i++) {
             if (!tab_addr[i].ignore) {
-                PCHK(sendto(soc, req, strlen(req) + 1, 0, &tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
+                PCHK(sendto(soc, req, strlen(req) + 1, 0, (struct sockaddr *)&tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
 
                 struct sockaddr_in6 src_addr;
                 socklen_t len_addr = sizeof(struct sockaddr_in6);
