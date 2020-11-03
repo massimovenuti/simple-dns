@@ -60,12 +60,11 @@ int main(int argc, char const* argv[]) {
             if (!strcmp(str, "stop")) {
                 TCHK(pthread_attr_destroy(&thread_attr));
                 PCHK(close(soc));
+                free_names(tab);
                 return EXIT_SUCCESS;
             }
         }
     }
-
-    free_names(tab);
 
     return EXIT_SUCCESS;
 }

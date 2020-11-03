@@ -100,7 +100,7 @@ int make_res(char *dest, char *src, struct name *names, size_t *len) {
     char name[NAMELEN];
     size_t alloc_mem = sizeof(dest);
 
-    if (!parse_req(name, src, *len)) {
+    if (parse_req(name, src, *len)) {
         fprintf(stderr, "Request incorrect\n");
         return EXIT_FAILURE;
     }
