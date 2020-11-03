@@ -13,9 +13,6 @@ void* processes_request(void* arg) {
     make_res(res, req, info.tab_of_addr, &len_res);
     PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
 
-    (void) res;
-    (void) req;
-    (void) len_res;
     return NULL;
 }
 

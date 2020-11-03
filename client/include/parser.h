@@ -21,7 +21,7 @@
 #define SEPARATOR "|"
 
 struct addr_with_flag {
-    struct sockaddr addr;
+    struct sockaddr_in6 addr;
     bool ignore;
     bool end;
 };
@@ -37,7 +37,7 @@ struct res
 };
 
 
-void convert(char ip[], int port, struct sockaddr *dst);
+void convert(char ip[], int port, struct sockaddr_in6 *dst);
 struct addr_with_flag *parse_conf(const char *file_name);
 
 struct res parse_res(char *res, size_t len);
