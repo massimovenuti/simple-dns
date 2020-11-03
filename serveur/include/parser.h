@@ -34,12 +34,12 @@ void init_names(struct name *names, int start, int end);
 
 void free_names(struct name * names);
 
-int compare(char *s1, char *s2);
+bool compare(char *s1, char *s2);
 
 struct name *parse_conf(const char *file_name);
 
-int parse_req(char *dest, char *src, size_t len); 
+bool parse_req(char *dest, char *src, size_t len); 
 
-int increase_memsize(char *dest, size_t *size_dest, size_t size_src);
+bool increase_memsize(char *dest, size_t *size_dest, size_t size_src);
 
-int make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src);
+bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src);

@@ -16,10 +16,10 @@ void free_names(struct name *names) {
 }
 
 
-int compare(char *s1, char *s2) {
+bool compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
-        return 0;
+        return false;
     return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2); 
 }
 
@@ -75,31 +75,31 @@ struct name *parse_conf(const char *file_name) {
     return res;
 }
 
-int parse_req(char *dest, char *src, size_t len) {
+bool parse_req(char *dest, char *src, size_t len) {
     int i;
     for (i = len; i > 0 && src[i] != '|'; i--)
         ;
     if (i == 0) {
-        return EXIT_FAILURE;
+        return false;
     }
     MCHK(strcpy(dest, &src[i + 1]));
-    return EXIT_SUCCESS;
+    return true;
 }
 
-int increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
-    int x = EXIT_FAILURE;
+bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
+    int x = false;
     if (*size_dest < size_src) {
         *size_dest *= INCREASE_COEF;
         MCHK(realloc(dest, *size_dest));
-        x = EXIT_SUCCESS;
+        x = true;
     }
     return x;
 }
 
-int make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src) {
+bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src) {
     char name[NAMELEN];
 
-    if (parse_req(name, src, len_src)) {
+    if (!parse_req(name, src, len_src)) {
         fprintf(stderr, "Request incorrect\n");
         exit(EXIT_FAILURE);
     }
@@ -131,8 +131,8 @@ int make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t
 
     if (!found) {
         MCHK(strcat(dest, FAIL));
-        return EXIT_FAILURE;
+        return false;
     }
 
-    return EXIT_SUCCESS;
+    return true;
 }
