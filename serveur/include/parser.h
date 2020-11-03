@@ -38,7 +38,7 @@ bool compare(char *s1, char *s2);
 
 struct name *parse_conf(const char *file_name);
 
-bool parse_req(char *dest, char *src, size_t len); 
+bool parse_req(char *dest, char *src); 
 
 bool increase_memsize(char *dest, size_t *size_dest, size_t size_src);
 

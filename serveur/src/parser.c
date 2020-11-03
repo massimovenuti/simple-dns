@@ -75,15 +75,11 @@ struct name *parse_conf(const char *file_name) {
     return res;
 }
 
-bool parse_req(char *dest, char *src, size_t len) {
-    int i;
-    for (i = len; i > 0 && src[i] != '|'; i--)
-        ;
-    if (i == 0) {
-        return false;
+bool parse_req(char *dest, char *src) {
+    if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) {
+        return true;
     }
-    MCHK(strcpy(dest, &src[i + 1]));
-    return true;
+    return false;
 }
 
 bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
@@ -99,7 +95,7 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
 bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src) {
     char name[NAMELEN];
 
-    if (!parse_req(name, src, len_src)) {
+    if (!parse_req(name, src)) {
         fprintf(stderr, "Request incorrect\n");
         exit(EXIT_FAILURE);
     }

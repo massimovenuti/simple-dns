@@ -8,7 +8,7 @@ void convert(char ip[], int port, struct sockaddr_in6 *dst) {
     if (check == 0) {
         PCHK(check = inet_pton(AF_INET6, ip, &dst->sin6_addr));
         if (check == 0) {
-            fprintf(stderr, "invalide addrese: %s\n", ip);
+            fprintf(stderr, "Invalid address: %s\n", ip);
             exit(EXIT_FAILURE);
         }
         dst->sin6_port = htons(port);
@@ -54,7 +54,10 @@ struct res parse_res(char *res, size_t len) {
     char time[TIMELEN];
     char code[CODELEN];
 
-    sscanf(res, "%[^|- ] | %[^|- ] | %[^|- ] | %[^|- ]", id, time, s_res.req_name, code);
+    if (sscanf(res, " %[^|- ] | %[^|- ] | %[^|- ] | %[^|- ] ", id, time, s_res.req_name, code) != 4) {
+        fprintf(stderr, "Incorrect server result\n");
+        exit(EXIT_FAILURE);
+    }
 
     s_res.id = atoi(id);
     s_res.time = (time_t)atoi(time);
@@ -76,21 +79,22 @@ struct res parse_res(char *res, size_t len) {
     } else {
         s_res.addrs = malloc(max_addrs * sizeof(struct addr_with_flag));
         do {
-            if (nb_addrs > max_addrs) {
-                max_addrs *= INCREASE_COEF;
-                MCHK(s_res.addrs = realloc(s_res.addrs, max_addrs * sizeof(struct addr_with_flag)));
+            if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
+                fprintf(stderr, "Server result incorrect\n");
+                exit(EXIT_FAILURE);
             }
-            sscanf(token, " %[^,- ] , %[^,- ] , %[^,- ] ", name, ip, port);
             if (first) {
                 MCHK(strcpy(s_res.name, name));
                 first = false;
             }
-            if (*name && *ip && *port) {
-                convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
-                s_res.addrs[nb_addrs].ignore = false;
-                s_res.addrs[nb_addrs].end = false;
-                nb_addrs++;
+            if (nb_addrs > max_addrs) {
+                max_addrs *= INCREASE_COEF;
+                MCHK(s_res.addrs = realloc(s_res.addrs, max_addrs * sizeof(struct addr_with_flag)));
             }
+            convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
+            s_res.addrs[nb_addrs].ignore = false;
+            s_res.addrs[nb_addrs].end = false;
+            nb_addrs++;
             token = strtok(NULL, SEPARATOR);
         } while (token != NULL);
         s_res.addrs[nb_addrs].end = true;
