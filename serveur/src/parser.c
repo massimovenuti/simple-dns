@@ -41,11 +41,8 @@ struct name *parse_conf(const char *file_name) {
             init_names(res, i, max_names);
         }
         for (tmp = 0; tmp < i; tmp++) {
-            found = strcmp(res[tmp].name, name);
+            found = !strcmp(res[tmp].name, name);
             if (found) {
-                if (res[tmp].nb_servers == 0) {
-                    MCHK(res[tmp].servers = malloc(res[tmp].max_servers * sizeof(struct server)));
-                } 
                 if (res[tmp].nb_servers >= res[tmp].max_servers) {
                     res[tmp].max_servers *= INCREASE_COEF;
                     MCHK(res[tmp].servers = realloc(res[tmp].servers, res[tmp].max_servers * sizeof(struct server)));
