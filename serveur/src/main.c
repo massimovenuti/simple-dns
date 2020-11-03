@@ -65,5 +65,7 @@ int main(int argc, char const* argv[]) {
         }
     }
 
+    free_names(tab);
+
     return EXIT_SUCCESS;
 }

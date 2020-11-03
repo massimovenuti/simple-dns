@@ -29,9 +29,12 @@ struct name {
     int max_servers;
 };
 
-int compare(char *s1, char *s2);
 
 void init_names(struct name *names, int start, int end);
+
+void free_names(struct name * names);
+
+int compare(char *s1, char *s2);
 
 struct name *parse_conf(const char *file_name);
 

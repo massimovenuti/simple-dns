@@ -1,18 +1,26 @@
 #include "parser.h"
 
-int compare(char *s1, char *s2) {
-    char *tmp = strstr(s1, s2);
-    if (tmp == NULL)
-        return 0;
-    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2); 
-}
-
 void init_names(struct name *names, int start, int end) {
     for (int i = start; i < end; i++) {
         names[i].nb_servers = 0;
         names[i].max_servers = TABSIZE;
         names[i].servers = NULL;
     }
+}
+
+void free_names(struct name *names) {
+    for (int i = 0; names[i].servers != NULL; i++) {
+        free(names[i].servers);
+    }
+    free(names);
+}
+
+
+int compare(char *s1, char *s2) {
+    char *tmp = strstr(s1, s2);
+    if (tmp == NULL)
+        return 0;
+    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2); 
 }
 
 struct name *parse_conf(const char *file_name) {
