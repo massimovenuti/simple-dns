@@ -16,6 +16,7 @@
 #include "parser.h"
 
 #define REQLEN 512
+#define RESLEN 1024
 
 struct thread_arg {
     int soc;

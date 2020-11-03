@@ -96,18 +96,18 @@ int increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     return x;
 }
 
-int make_res(char *dest, char *src, struct name *names, size_t *len) {
+int make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src) {
     char name[NAMELEN];
-    size_t alloc_mem = sizeof(dest);
 
-    if (parse_req(name, src, *len)) {
+    if (parse_req(name, src, len_src)) {
         fprintf(stderr, "Request incorrect\n");
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
-    *len += 3;
-    increase_memsize(dest, &alloc_mem, *len);
+    size_t alloc_mem = sizeof(dest);
 
+    *len_dest = len_src + 3;
+    increase_memsize(dest, &alloc_mem, *len_dest * sizeof(char));
     MCHK(strcat(strcpy(dest, src), SEPARATOR));
 
     int i, j;
@@ -117,8 +117,8 @@ int make_res(char *dest, char *src, struct name *names, size_t *len) {
             found = true;
             MCHK(strcat(dest, SUCCESS));
             for (j = 0; j < names[i].nb_servers; j++) {
-                *len += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
-                increase_memsize(dest, &alloc_mem, *len);
+                *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
+                increase_memsize(dest, &alloc_mem, *len_dest * sizeof(char));
                 MCHK(strcat(dest, SEPARATOR));
                 MCHK(strcat(dest, name));
                 MCHK(strcat(dest, SUBSEPARATOR));
