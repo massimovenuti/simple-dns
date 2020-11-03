@@ -12,7 +12,6 @@
 #include "macro.h"
 #include "parser.h"
 
-#define REQ_MAX 512
-#define NAME_MAX 124
+#define REQLEN 512
 
 char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab);

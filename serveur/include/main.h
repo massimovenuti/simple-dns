@@ -15,6 +15,8 @@
 #include "macro.h"
 #include "parser.h"
 
+#define REQLEN 512
+
 struct thread_arg {
     int soc;
     struct name *tab_of_addr;

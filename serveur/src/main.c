@@ -2,19 +2,20 @@
 
 void* processes_request(void* arg) {
     struct thread_arg info = *(struct thread_arg*)arg;
-    char req[512];
+    char req[REQLEN];
+    char res[REQLEN];
     struct sockaddr_in6 src_addr;
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
 
     PCHK((len_req = recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
-    char* name = parse_req(req, (size_t)len_req);
     size_t len_res = (size_t)len_req;
-    char* res = make_res(info.tab_of_addr, req, &len_res);
+    make_res(res, req, info.tab_of_addr, &len_res);
     PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
 
-    free(name);
-    free(res);
+    (void) res;
+    (void) req;
+    (void) len_res;
     return NULL;
 }
 

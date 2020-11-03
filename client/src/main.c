@@ -1,14 +1,14 @@
 #include "main.h"
 
 char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab) {
-    char req[REQ_MAX];
-    char res[REQ_MAX];
+    char req[REQLEN];
+    char res[REQLEN];
 
     time_t t;
     PCHK(time(&t));
 
-    if (snprintf(req, REQ_MAX, "%d|%ld|%s", *id, t, name) > REQ_MAX - 1)
-        fprintf(stderr, "Request so long");
+    if (snprintf(req, REQLEN, "%d|%ld|%s", *id, t, name) > REQLEN - 1)
+        fprintf(stderr, "Request too long");
 
     printf("%s\n", req);  //for DEBUG
 
@@ -31,7 +31,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                 PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout));
                 if (FD_ISSET(soc, &ensemble)) {
                     ssize_t len_res;
-                    PCHK(len_res = recvfrom(soc, res, REQ_MAX, 0, (struct sockaddr *)&src_addr, &len_addr));
+                    PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
                     struct res struc_res = parse_res(res, len_res);
                     if (struc_res.id == *id) {
                         if (struc_res.code > 0) {
@@ -82,7 +82,7 @@ int main(int argc, char const *argv[]) {
     int soc;
     PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
 
-    char name[NAME_MAX];
+    char name[NAMELEN];
     scanf("%s", name);
     int id = 0;
     printf("%s\n", resolve(soc, &id, name, tab_addr, true));

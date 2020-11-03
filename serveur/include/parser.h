@@ -24,15 +24,19 @@ struct server {
 
 struct name {
     char name[NAMELEN];
-    struct server *servers; //passer en dynamique
+    struct server *servers;
     int nb_servers;
     int max_servers;
 };
 
 int compare(char *s1, char *s2);
 
+void init_names(struct name *names, int start, int end);
+
 struct name *parse_conf(const char *file_name);
 
-char *parse_req(char *str, size_t len);
+int parse_req(char *dest, char *src, size_t len); 
 
-char *make_res(struct name *names, char *req, size_t *len);
+int increase_memsize(char *dest, size_t *size_dest, size_t size_src);
+
+int make_res(char *dest, char *src, struct name *names, size_t *len);

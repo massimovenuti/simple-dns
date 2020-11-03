@@ -18,8 +18,10 @@
 #define IDLEN 129
 #define PORTLEN 10
 
+#define SEPARATOR "|"
+
 struct addr_with_flag {
-    struct sockaddr_in6 addr;
+    struct sockaddr addr;
     bool ignore;
     bool end;
 };
@@ -35,7 +37,7 @@ struct res
 };
 
 
-void convert(char ip[], int port, struct sockaddr_in6 *dst);
+void convert(char ip[], int port, struct sockaddr *dst);
 struct addr_with_flag *parse_conf(const char *file_name);
 
 struct res parse_res(char *res, size_t len);
