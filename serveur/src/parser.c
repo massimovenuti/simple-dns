@@ -113,7 +113,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
                 *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
                 increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
                 MCHK(strcat(dest, SEPARATOR));
-                MCHK(strcat(dest, name));
+                MCHK(strcat(dest, names[i].name));
                 MCHK(strcat(dest, SUBSEPARATOR));
                 MCHK(strcat(dest, names[i].servers[j].ip));
                 MCHK(strcat(dest, SUBSEPARATOR));
