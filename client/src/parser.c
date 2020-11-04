@@ -42,7 +42,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
         res[i].end = false;
         res[i].ignore = false;
     }
-    res[i + 1].end = true;
+    res[i].end = true;
 
     PCHK(fclose(file));
     return res;

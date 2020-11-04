@@ -12,7 +12,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
 
     printf("%s\n", req);  //for DEBUG
 
-    struct timeval timeout = {10, 0};
+    struct timeval timeout = {5, 0};
     fd_set ensemble;
 
     bool find = false;
@@ -37,8 +37,6 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                         if (struc_res.code > 0) {
                             find = true;
                             retry = false;
-                            int test = strcmp(name, struc_res.name);
-                            (void)test;
                             if (!strcmp(name, struc_res.name)) {
                                 if (free_tab) {
                                     free(tab_addr);
