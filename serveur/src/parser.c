@@ -15,12 +15,11 @@ void free_names(struct name *names) {
     free(names);
 }
 
-
 bool compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
         return false;
-    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2); 
+    return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2);
 }
 
 struct name *parse_conf(const char *file_name) {
@@ -92,7 +91,7 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     return x;
 }
 
-bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src) {
+bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
     char name[NAMELEN];
 
     if (!parse_req(name, src)) {
@@ -100,10 +99,8 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
         exit(EXIT_FAILURE);
     }
 
-    size_t alloc_mem = sizeof(dest);
-
     *len_dest = len_src + 3;
-    increase_memsize(dest, &alloc_mem, *len_dest * sizeof(char));
+    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
     MCHK(strcat(strcpy(dest, src), SEPARATOR));
 
     int i, j;
@@ -114,7 +111,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
             MCHK(strcat(dest, SUCCESS));
             for (j = 0; j < names[i].nb_servers; j++) {
                 *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
-                increase_memsize(dest, &alloc_mem, *len_dest * sizeof(char));
+                increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
                 MCHK(strcat(dest, SEPARATOR));
                 MCHK(strcat(dest, name));
                 MCHK(strcat(dest, SUBSEPARATOR));
