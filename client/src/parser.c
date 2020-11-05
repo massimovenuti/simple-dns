@@ -21,9 +21,9 @@ void convert(char ip[], int port, struct sockaddr_in6 *dst) {
 
 bool is_ignored(char *ip, char *port, struct ignored_servers servers) {
     int i;
-    for (i = 0; i < servers.nb_servers && strcmp(ip, servers.servers[i].ip) != 0 
-            && strcmp(port, servers.servers[i].port) != 0; i++); 
-    return i != (servers.nb_servers - 1);
+    for (i = 0; i < servers.nb_servers && strcmp(ip, servers.servers[i].ip) != 0 && strcmp(port, servers.servers[i].port) != 0; i++)
+        ;
+    return i != servers.nb_servers;
 }
 
 struct addr_with_flag *parse_conf(const char *file_name) {
@@ -44,7 +44,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
         if (i >= max_addrs) {
             max_addrs *= INCREASE_COEF;
             MCHK(res = realloc(res, max_addrs * sizeof(struct addr_with_flag)));
-        }  
+        }
         convert(ip, port, &res[i].addr);
         res[i].end = false;
         res[i].ignore = false;
@@ -69,7 +69,7 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
     struct timeval t;
     PCHK(gettimeofday(&t, NULL));
 
-    s_res.time.tv_sec = t.tv_sec - s_res.time.tv_usec;
+    s_res.time.tv_sec = t.tv_sec - s_res.time.tv_sec;
     s_res.time.tv_usec = t.tv_usec - s_res.time.tv_usec;
 
     char *token;
@@ -116,6 +116,10 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
 struct server addr_to_string(struct addr_with_flag addr) {
     struct server res;
     sprintf(res.port, "%d", ntohs(addr.addr.sin6_port));
-    inet_ntop(AF_INET6, &addr.addr, res.ip, sizeof(addr.addr));
+    if (addr.addr.sin6_family == AF_INET6) {
+        inet_ntop(AF_INET6, &addr.addr.sin6_addr, res.ip, sizeof(addr.addr));
+    } else {
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr.addr))->sin_addr, res.ip, sizeof(addr.addr));
+    }
     return res;
 }
