@@ -4,13 +4,13 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
     char req[REQLEN];
     char res[REQLEN];
 
-    time_t t;
-    PCHK(time(&t));
+    struct timeval t;
+    PCHK(gettimeofday(&t, NULL));
 
-    if (snprintf(req, REQLEN, "%d|%ld|%s", *id, t, name) > REQLEN - 1)
+    if (snprintf(req, REQLEN, "%d|%ld,%ld|%s", *id, t.tv_sec, t.tv_usec, name) > REQLEN - 1)
         fprintf(stderr, "Request too long");
 
-    printf("%s\n", req);  //for DEBUG
+    printf("req: %s\n", req);  //for DEBUG
 
     struct timeval timeout = {5, 0};
     fd_set ensemble;
@@ -33,6 +33,8 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                     ssize_t len_res;
                     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
                     struct res struc_res = parse_res(res, len_res);
+                    printf("res: %s\n", res);
+                    printf("in: %lds %ldms\n\n", struc_res.time.tv_sec, struc_res.time.tv_usec/1000);
                     if (struc_res.id == *id) {
                         if (struc_res.code > 0) {
                             find = true;
@@ -41,6 +43,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                                 if (free_tab) {
                                     free(tab_addr);
                                 }
+                                free(struc_res.addrs);
                                 return "good";
                             } else {
                                 *id = *id + 1;
@@ -69,7 +72,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
 }
 
 int main(int argc, char const *argv[]) {
-    if (argc != 2) {
+    if (argc < 2 || argc > 3) {
         fprintf(stderr, "Usage: <path of config file>");
         exit(EXIT_FAILURE);
     }
@@ -80,9 +83,52 @@ int main(int argc, char const *argv[]) {
     int soc;
     PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
 
-    char name[NAMELEN];
-    scanf("%s", name);
+    bool interactif = true;
+    FILE *req_file;
+    if (argc == 3) {
+        interactif = false;
+        MCHK(req_file = fopen(argv[2], "r"));
+    }
+
     int id = 0;
-    printf("%s\n", resolve(soc, &id, name, tab_addr, true));
+    char name[NAMELEN];
+    bool goon = true;
+    while (goon && interactif) {
+        scanf("%s", name);
+        if (*name == '!') {
+            if (!strcmp(name, "!stop")) {
+                goon = false;
+            }
+
+        } else {
+            printf("%s\n", resolve(soc, &id, name, tab_addr, false));
+        }
+    }
+
+    while (goon && !interactif) {
+        if (fscanf(req_file, "%s", name) == EOF) {
+            if (ferror(req_file)) {
+                perror("fscanf(req_file,\"%s\", name)");
+                exit(EXIT_FAILURE);
+            } else {
+                goon = false;
+            }
+        } else {
+            if (*name == '!') {
+                if (!strcmp(name, "!stop")) {
+                    goon = false;
+                }
+
+            } else {
+                printf("%s\n", resolve(soc, &id, name, tab_addr, false));
+            }
+        }
+    }
+
+    if (!interactif) {
+        fclose(req_file);
+    }
+
+    free(tab_addr);
     exit(EXIT_SUCCESS);
 }

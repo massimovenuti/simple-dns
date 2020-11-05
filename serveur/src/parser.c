@@ -99,7 +99,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
         exit(EXIT_FAILURE);
     }
 
-    *len_dest = len_src + 3;
+    *len_dest = len_src + 4;
     increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
     MCHK(strcat(strcpy(dest, src), SEPARATOR));
 
@@ -122,7 +122,9 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
         }
     }
 
+    MCHK(strcat(dest, "\0"));
     if (!found) {
+        *len_dest += 1;
         MCHK(strcat(dest, FAIL));
         MCHK(strcat(dest, SEPARATOR));
         return false;

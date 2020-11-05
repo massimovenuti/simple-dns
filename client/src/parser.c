@@ -52,11 +52,18 @@ struct res parse_res(char *res, size_t len) {
     (void)len;
     struct res s_res;
     char tab_addr[1024];
+    *tab_addr = '\0';
 
-    if (sscanf(res, " %d | %ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time, s_res.req_name, &s_res.code, tab_addr) < 4) {
+    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name, &s_res.code, tab_addr) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         exit(EXIT_FAILURE);
     }
+
+    struct timeval t;
+    PCHK(gettimeofday(&t, NULL));
+
+    s_res.time.tv_sec = t.tv_sec - s_res.time.tv_usec;
+    s_res.time.tv_usec = t.tv_usec - s_res.time.tv_usec;
 
     char *token;
     char name[NAMELEN];

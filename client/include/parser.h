@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include "macro.h"
 
@@ -29,7 +30,7 @@ struct addr_with_flag {
 struct res
 {
     int id;
-    time_t time;
+    struct timeval time;
     char req_name[100];
     int code;
     char name[100];
