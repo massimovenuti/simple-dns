@@ -49,19 +49,14 @@ struct addr_with_flag *parse_conf(const char *file_name) {
 }
 
 struct res parse_res(char *res, size_t len) {
+    (void)len;
     struct res s_res;
-    char id[IDLEN];
-    char time[TIMELEN];
-    char code[CODELEN];
+    char tab_addr[1024];
 
-    if (sscanf(res, " %[^|- ] | %[^|- ] | %[^|- ] | %[^|- ] ", id, time, s_res.req_name, code) != 4) {
+    if (sscanf(res, " %d | %ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time, s_res.req_name, &s_res.code, tab_addr) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         exit(EXIT_FAILURE);
     }
-
-    s_res.id = atoi(id);
-    s_res.time = (time_t)atoi(time);
-    s_res.code = atoi(code);
 
     char *token;
     char name[NAMELEN];
@@ -71,8 +66,7 @@ struct res parse_res(char *res, size_t len) {
     int max_addrs = TABSIZE;
     bool first = true;
 
-    len -= (strlen(id) + strlen(time) + strlen(s_res.req_name) + strlen(code));
-    token = strtok(res + len, SEPARATOR);
+    token = strtok(tab_addr, SEPARATOR);
 
     if (token == NULL) {
         s_res.addrs = NULL;

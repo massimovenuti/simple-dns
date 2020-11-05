@@ -124,6 +124,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
 
     if (!found) {
         MCHK(strcat(dest, FAIL));
+        MCHK(strcat(dest, SEPARATOR));
         return false;
     }
 
