@@ -1,7 +1,9 @@
 #include "main.h"
 
 void ignore(struct addr_with_flag addr, struct ignored_servers *servers) { 
-    servers->servers[servers->nb_servers] = addr_to_string(addr);
+    struct server tmp = addr_to_string(addr);
+    MCHK(strcpy(servers->servers[servers->nb_servers].ip, tmp.ip));
+    MCHK(strcpy(servers->servers[servers->nb_servers].port, tmp.port));
     servers->nb_servers = (servers->nb_servers + 1) % MAX_IGNORED;
 }
 
