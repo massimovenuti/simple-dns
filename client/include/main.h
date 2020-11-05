@@ -14,4 +14,6 @@
 
 #define REQLEN 512
 
-char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab);
+char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, struct ignored_servers ignored_serv, bool free_tab);
+void ignore(struct addr_with_flag addr, struct ignored_servers *servers);
+

@@ -1,6 +1,11 @@
 #include "main.h"
 
-char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, bool free_tab) {
+void ignore(struct addr_with_flag addr, struct ignored_servers *servers) { 
+    servers->servers[servers->nb_servers] = addr_to_string(addr);
+    servers->nb_servers = (servers->nb_servers + 1) % MAX_IGNORED;
+}
+
+char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, struct ignored_servers ignored_serv, bool free_tab) {
     char req[REQLEN];
     char res[REQLEN];
 
@@ -32,7 +37,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                 if (FD_ISSET(soc, &ensemble)) {
                     ssize_t len_res;
                     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
-                    struct res struc_res = parse_res(res, len_res);
+                    struct res struc_res = parse_res(res, len_res, ignored_serv);
                     printf("res: %s\n", res);
                     printf("in: %lds %ldms\n\n", struc_res.time.tv_sec, struc_res.time.tv_usec/1000);
                     if (struc_res.id == *id) {
@@ -50,7 +55,7 @@ char *resolve(int soc, int *id, char *name, struct addr_with_flag *tab_addr, boo
                                 if (free_tab) {
                                     free(tab_addr);
                                 }
-                                return resolve(soc, id, name, struc_res.addrs, true);
+                                return resolve(soc, id, name, struc_res.addrs, ignored_serv, true);
                             }
                         } else {
                             if (free_tab) {
@@ -78,6 +83,9 @@ int main(int argc, char const *argv[]) {
     }
 
     struct addr_with_flag *tab_addr;
+    struct ignored_servers ignored_serv;
+    ignored_serv.nb_servers = 0;
+
     tab_addr = parse_conf(argv[1]);
 
     int soc;
@@ -101,7 +109,7 @@ int main(int argc, char const *argv[]) {
             }
 
         } else {
-            printf("%s\n", resolve(soc, &id, name, tab_addr, false));
+            printf("%s\n", resolve(soc, &id, name, tab_addr, ignored_serv, true));
         }
     }
 
@@ -120,7 +128,7 @@ int main(int argc, char const *argv[]) {
                 }
 
             } else {
-                printf("%s\n", resolve(soc, &id, name, tab_addr, false));
+                printf("%s\n", resolve(soc, &id, name, tab_addr, ignored_serv, true));
             }
         }
     }
