@@ -85,7 +85,7 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     int x = false;
     if (*size_dest < size_src) {
         *size_dest *= INCREASE_COEF;
-        MCHK(realloc(dest, *size_dest));
+        MCHK(dest = realloc(dest, *size_dest));
         x = true;
     }
     return x;
