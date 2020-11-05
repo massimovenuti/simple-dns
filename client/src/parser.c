@@ -19,6 +19,13 @@ void convert(char ip[], int port, struct sockaddr_in6 *dst) {
     }
 }
 
+bool is_ignored(char *ip, char *port, struct ignored_servers servers) {
+    int i;
+    for (i = 0; i < servers.nb_servers && strcmp(ip, servers.servers[i].ip) != 0 
+            && strcmp(port, servers.servers[i].port) != 0; i++); 
+    return i != (servers.nb_servers - 1);
+}
+
 struct addr_with_flag *parse_conf(const char *file_name) {
     struct addr_with_flag *res;
     int max_addrs = TABSIZE;
@@ -37,7 +44,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
         if (i >= max_addrs) {
             max_addrs *= INCREASE_COEF;
             MCHK(res = realloc(res, max_addrs * sizeof(struct addr_with_flag)));
-        }
+        }  
         convert(ip, port, &res[i].addr);
         res[i].end = false;
         res[i].ignore = false;
@@ -48,7 +55,7 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     return res;
 }
 
-struct res parse_res(char *res, size_t len) {
+struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
     (void)len;
     struct res s_res;
     char tab_addr[1024];
@@ -85,14 +92,23 @@ struct res parse_res(char *res, size_t len) {
                 max_addrs *= INCREASE_COEF;
                 MCHK(s_res.addrs = realloc(s_res.addrs, max_addrs * sizeof(struct addr_with_flag)));
             }
-            convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
-            s_res.addrs[nb_addrs].ignore = false;
-            s_res.addrs[nb_addrs].end = false;
-            nb_addrs++;
+            if (!is_ignored(ip, port, servers)) {
+                convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
+                s_res.addrs[nb_addrs].ignore = false;
+                s_res.addrs[nb_addrs].end = false;
+                nb_addrs++;
+            }
             token = strtok(NULL, SEPARATOR);
         } while (token != NULL);
         s_res.addrs[nb_addrs].end = true;
     }
 
     return s_res;
+}
+
+struct server addr_to_string(struct addr_with_flag addr) {
+    struct server res;
+    sprintf(res.port, "%d", ntohs(addr.addr.sin6_port));
+    inet_ntop(AF_INET6, &addr.addr, res.ip, sizeof(addr.addr));
+    return res;
 }
