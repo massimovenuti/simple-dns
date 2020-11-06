@@ -123,3 +123,20 @@ struct server addr_to_string(struct addr_with_flag addr) {
     }
     return res;
 }
+
+struct tree *rech_inter(char *name, struct tree *t, int ind) {
+    if (t->nb_sons == 0) {
+        return t;
+    }
+    for (; ind > 0 && name[ind] != '.'; ind--);
+    for (int i = 0; i < t->nb_sons; i++) {
+        if (!strcmp(t->sons[i], name + ind - 1)) {
+            return rech_inter(name, t->sons[i], ind - 1);
+        }
+    }
+    return t;
+}
+
+struct tree *rech(char *name, struct tree *t) {
+    return rech_inter(name, t, strlen(name) - 1);
+}

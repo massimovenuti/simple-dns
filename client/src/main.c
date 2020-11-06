@@ -7,87 +7,119 @@ void ignore(struct addr_with_flag addr, struct ignored_servers *servers) {
     servers->nb_servers = (servers->nb_servers + 1) % MAX_IGNORED;
 }
 
-char *resolve(int soc, int *id, char *name, char *dst, struct addr_with_flag *tab_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab) {
-    char req[REQLEN];
-    char res[REQLEN];
+// ajouter un flag "check_sons"
+char *resolve(int soc, struct request *request, char *dst, struct tree *tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab) {    
+    struct tree *t_rech = rech(request->name, *tree_addr);      // on regarde si on a pas déjà fait une requête similaire
 
-    struct timeval t;
-    PCHK(gettimeofday(&t, NULL));
+    if (!strcmp(t_rech->name, request->name)) {                 // si on a déjà trouvé cette adresse, on renvoie directement le résultat
+        struct server final_res = addr_to_string(*t_rech->tab_addr);
+        snprintf(dst, REQLEN, "%s:%s", final_res.ip, final_res.port);
+        return dst;
+    }
+    else if (strcmp(t_rech->name, tree_addr->name)) {           // si on a déjà trouvé des domaines, sous-domaines, etc on reprend de la
+        return resolve(soc, request, dst, t_rech, ignored_serv, monitoring, free_tab);
+    }
+    else {
+        char req[REQLEN];
+        char res[REQLEN];
 
-    if (snprintf(req, REQLEN, "%d|%ld,%ld|%s", *id, t.tv_sec, t.tv_usec, name) > REQLEN - 1)
-        fprintf(stderr, "Request too long");
+        struct timeval t;
+        PCHK(gettimeofday(&t, NULL));
 
-    if (monitoring) fprintf(stderr, "req: %s\n", req);
+        if (snprintf(req, REQLEN, "%d|%ld,%ld|%s", request->id, t.tv_sec, t.tv_usec, request->name) > REQLEN - 1)
+            fprintf(stderr, "Request too long");
 
-    struct timeval timeout = {5, 0};
-    fd_set ensemble;
+        if (monitoring) 
+            fprintf(stderr, "req: %s\n", req);
 
-    bool find = false;
-    bool retry = true;
-    do {
-        for (int i = 0; !tab_addr[i].end && !find; i++) {
-            if (!tab_addr[i].ignore) {
-                PCHK(sendto(soc, req, strlen(req) + 1, 0, (struct sockaddr *)&tab_addr[i].addr, (socklen_t)sizeof(struct sockaddr_in6)));
+        struct timeval timeout = {5, 0};
 
-                struct sockaddr_in6 src_addr;
-                socklen_t len_addr = sizeof(struct sockaddr_in6);
+        fd_set ensemble;
 
-                FD_ZERO(&ensemble);
-                FD_SET(soc, &ensemble);
+        bool find = false;
+        bool retry = true;
+        do {
+            for (int count = 0, j = tree_addr->index; count < tree_addr->nb_addrs && !find; count++, j = (j + 1) % tree_addr->nb_addrs) {
+                tree_addr->index = j;
+                struct server tmp_serv = addr_to_string(tree_addr->tab_addr[j]);
+                if (!is_ignored(tmp_serv.ip, tmp_serv.port, *ignored_serv)) {
+                    PCHK(sendto(soc, req, strlen(req) + 1, 0, (struct sockaddr *)&tree_addr->tab_addr[j].addr, (socklen_t)sizeof(struct sockaddr_in6)));
 
-                PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout));
-                if (FD_ISSET(soc, &ensemble)) {
-                    ssize_t len_res;
-                    PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
-                    struct res struc_res = parse_res(res, len_res, *ignored_serv);
+                    struct sockaddr_in6 src_addr;
+                    socklen_t len_addr = sizeof(struct sockaddr_in6);
 
-                    if (monitoring) {
-                        fprintf(stderr, "res: %s\n", res);
-                        fprintf(stderr, "in: %lds %ldms\n\n", struc_res.time.tv_sec, struc_res.time.tv_usec / 1000);
-                    }
+                    FD_ZERO(&ensemble);
+                    FD_SET(soc, &ensemble);
 
-                    if (struc_res.id == *id) {
-                        if (struc_res.code > 0) {
-                            find = true;
-                            retry = false;
-                            if (!strcmp(name, struc_res.name)) {
-                                if (free_tab) {
-                                    free(tab_addr);
-                                }
+                    PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout));
+                    if (FD_ISSET(soc, &ensemble)) {
+                        ssize_t len_res;
+                        PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
+                        struct res struc_res = parse_res(res, len_res, *ignored_serv);
 
-                                struct server final_res = addr_to_string(*struc_res.addrs);
-                                free(struc_res.addrs);
-
-                                snprintf(dst, REQLEN, "%s:%s", final_res.ip, final_res.port);
-                                return dst;
-                            } else {
-                                *id = *id + 1;
-                                if (free_tab) {
-                                    free(tab_addr);
-                                }
-                                return resolve(soc, id, name, dst, struc_res.addrs, ignored_serv, monitoring, true);
-                            }
-                        } else {
-                            if (free_tab) {
-                                free(tab_addr);
-                            }
-                            snprintf(dst, REQLEN, "\33[1;31mNot found\033[0m");
-                            return dst;
+                        if (monitoring) {
+                            fprintf(stderr, "res: %s\n", res);
+                            fprintf(stderr, "in: %lds %ldms\n\n", struc_res.time.tv_sec, struc_res.time.tv_usec / 1000);
                         }
+
+                        if (struc_res.id == request->id) {
+                            if (struc_res.code > 0) {
+                                find = true;
+                                retry = false;
+                                if (!strcmp(request->name, struc_res.name)) {
+                                    /*
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
+                                    */
+                                    struct server final_res = addr_to_string(*struc_res.addrs);
+                                    free(struc_res.addrs);
+
+                                    snprintf(dst, REQLEN, "%s:%s", final_res.ip, final_res.port);
+                                    return dst;
+                                } else {
+                                    request->id += 1;
+                                    /*
+                                    if (free_tab) {
+                                        free(tab_addr);
+                                    }
+                                    */       
+                                    struct tree new_tree_addr; 
+
+                                    strcpy(new_tree_addr.name, struc_res.name);
+                                    for (int tmp = 0; tmp < MAX_ADDR && !struc_res.addrs[tmp].end; tmp++) {
+                                        new_tree_addr.tab_addr[tmp] = struc_res.addrs[tmp];
+                                    }
+
+                                    tree_addr->sons[(tree_addr->nb_sons + 1) % tree_addr->nb_sons] = new_tree_addr;
+                                    tree_addr->nb_sons = tree_addr->nb_sons = MAX_SONS ? MAX_SONS : tree_addr->nb_sons + 1;
+
+                                    return resolve(soc, &request, dst, &new_tree_addr, ignored_serv, monitoring, true);
+                                }
+                            } else {
+                                /*
+                                if (free_tab) {
+                                    free(tab_addr);
+                                }
+                                */
+                                snprintf(dst, REQLEN, "\33[1;31mNot found\033[0m");
+                                return dst;
+                            }
+                        }
+                    } else if (!retry) {
+                        ignore(tree_addr->tab_addr[j], ignored_serv);
                     }
-                } else if (!retry) {
-                    ignore(tab_addr[i], ignored_serv);
-                    tab_addr[i].ignore = true;
                 }
             }
+        } while (retry && !(retry = false));
+        /*
+        if (free_tab) {
+            free(tab_addr);
         }
-    } while (retry && !(retry = false));
-
-    if (free_tab) {
-        free(tab_addr);
+        */
+        snprintf(dst, REQLEN, "\33[1;31mTimeout\033[0m");
     }
 
-    snprintf(dst, REQLEN, "\33[1;31mTimeout\033[0m");
     return dst;
 }
 
@@ -99,9 +131,18 @@ int main(int argc, char const *argv[]) {
 
     struct addr_with_flag *tab_addr;
     struct ignored_servers ignored_serv;
+    struct tab_requests requests;
+    struct tree tree_addr;
     ignored_serv.nb_servers = 0;
 
     tab_addr = parse_conf(argv[1]);
+
+    int i;
+    for (i = 0; !tab_addr[i].end; i++) {
+        tree_addr.tab_addr[i] = tab_addr[i];
+    }
+
+    tree_addr.nb_addrs = i + 1;
 
     int soc;
     PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
@@ -120,8 +161,13 @@ int main(int argc, char const *argv[]) {
     bool goon = true;
     while (goon && interactif) {
         putchar('>');
-        scanf("%s", name);
-        if (*name == '!') {
+        //...
+        scanf("%s", requests.requests[0].name);
+        requests.requests[0].id = 1;
+        if (*name != '!') {
+            //...
+            printf("%s, %s\n", requests.requests[0].name, resolve(soc, &requests.requests[0], res, &tree_addr, &ignored_serv, monitoring, false));
+        } else {
             if (!strcmp(name, "!stop")) {
                 goon = false;
             } else if (!strcmp(name, "!monitoring")) {
@@ -138,13 +184,11 @@ int main(int argc, char const *argv[]) {
                 }
                 fprintf(stderr, "\n");
             }
-        } else {
-            printf("%s\n", resolve(soc, &id, name, res, tab_addr, &ignored_serv, monitoring, false));
         }
     }
 
     while (goon && !interactif) {
-        if (fscanf(req_file, "%s", name) == EOF) {
+        if (fscanf(req_file, "%s", requests.requests[0].name) == EOF) {
             if (ferror(req_file)) {
                 perror("fscanf(req_file,\"%s\", name)");
                 exit(EXIT_FAILURE);
@@ -152,7 +196,10 @@ int main(int argc, char const *argv[]) {
                 goon = false;
             }
         } else {
-            if (*name == '!') {
+            if (*name != '!') {
+                //...
+                printf("%s, %s\n", name, resolve(soc, &requests.requests[0].name, res, &tree_addr, &ignored_serv, monitoring, false));
+            } else {
                 if (!strcmp(name, "!stop")) {
                     goon = false;
                 } else if (!strcmp(name, "!monitoring")) {
@@ -169,8 +216,6 @@ int main(int argc, char const *argv[]) {
                     }
                     fprintf(stderr, "\n");
                 }
-            } else {
-                printf("%s, %s\n", name, resolve(soc, &id, name, res, tab_addr, &ignored_serv, monitoring, false));
             }
         }
     }

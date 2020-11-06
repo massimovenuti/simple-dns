@@ -1,5 +1,11 @@
 #include "main.h"
 
+/**
+ * @brief 
+ * 
+ * @param arg 
+ * @return void* 
+ */
 void* processes_request(void* arg) {
     struct thread_arg info = *(struct thread_arg*)arg;
     struct sockaddr_in6 src_addr;

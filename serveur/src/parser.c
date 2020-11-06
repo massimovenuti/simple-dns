@@ -1,5 +1,12 @@
 #include "parser.h"
 
+/**
+ * @brief 
+ * 
+ * @param names 
+ * @param start 
+ * @param end 
+ */
 void init_names(struct name *names, int start, int end) {
     for (int i = start; i < end; i++) {
         names[i].nb_servers = 0;
@@ -8,6 +15,11 @@ void init_names(struct name *names, int start, int end) {
     }
 }
 
+/**
+ * @brief 
+ * 
+ * @param names 
+ */
 void free_names(struct name *names) {
     for (int i = 0; names[i].servers != NULL; i++) {
         free(names[i].servers);
@@ -15,6 +27,14 @@ void free_names(struct name *names) {
     free(names);
 }
 
+/**
+ * @brief 
+ * 
+ * @param s1 
+ * @param s2 
+ * @return true 
+ * @return false 
+ */
 bool compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
@@ -22,6 +42,15 @@ bool compare(char *s1, char *s2) {
     return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2);
 }
 
+/**
+ * @brief Parse un fichier de configuration
+ * 
+ * Récupère la liste des noms et des adresses contenues dans un fichier de 
+ * configuration.
+ * 
+ * @param file_name Fichier de configuration
+ * @return struct name* 
+ */
 struct name *parse_conf(const char *file_name) {
     struct name *res;
     int max_names = TABSIZE;
@@ -74,6 +103,16 @@ struct name *parse_conf(const char *file_name) {
     return res;
 }
 
+/**
+ * @brief Parse une requête
+ * 
+ * Extrait le la partie "nom" d'une requête.
+ * 
+ * @param dest Chaîne qui va contenir le résultat - doit être allouée
+ * @param src Chaîne représentant la requête à parser
+ * @return true Si succès
+ * @return false Sinon
+ */
 bool parse_req(char *dest, char *src) {
     if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) {
         return true;
@@ -81,6 +120,19 @@ bool parse_req(char *dest, char *src) {
     return false;
 }
 
+/**
+ * @brief Augmente la taille mémoire d'une chaîne si elle est trop petite
+ * 
+ * Augmente la taille mémoire d'une chaîne de caractères avec une taille 
+ * souhaitée. Si la taille souhaitée est plus petite que la taille actuelle de
+ * la chaîne, rien n'est modifié.
+ * 
+ * @param dest Chaîne de caractères à tester
+ * @param size_dest Taille actuelle de la chaîne de caractères
+ * @param size_src Nouvelle taille souhaitée
+ * @return true Si la taille mémoire de dest a été augmentée
+ * @return false Sinon
+ */
 bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     int x = false;
     if (*size_dest < size_src) {
@@ -91,6 +143,18 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     return x;
 }
 
+/**
+ * @brief 
+ * 
+ * @param dest 
+ * @param src 
+ * @param names 
+ * @param len_dest 
+ * @param len_src 
+ * @param max_len_dest 
+ * @return true 
+ * @return false 
+ */
 bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
     char name[NAMELEN];
 

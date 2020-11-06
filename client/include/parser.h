@@ -10,9 +10,12 @@
 #include "macro.h"
 
 #define TABSIZE 100
+#define MAX_ADDR 50
+#define MAX_SONS 4
 #define INCREASE_COEF 3
 
 #define MAX_IGNORED 10
+#define MAX_REQUESTS 5
 
 #define NAMELEN 256
 #define IPLEN 140
@@ -22,6 +25,7 @@
 #define PORTLEN 10
 
 #define SEPARATOR "|"
+
 
 struct addr_with_flag {
     struct sockaddr_in6 addr;
@@ -49,8 +53,25 @@ struct res
     struct addr_with_flag *addrs;
 };
 
+struct tree {
+    char name[NAMELEN];
+    struct addr_with_flag tab_addr[MAX_ADDR]; // à allouer dynamiquement...
+    int nb_addrs;
+    int index;
+    struct tree sons[MAX_SONS]; // ne fonctionne pas, à allouer dynamiquement
+    int nb_sons;
+};
+
 bool is_ignored(char *ip, char *port, struct ignored_servers servers);
+
 void convert(char ip[], int port, struct sockaddr_in6 *dst);
+
 struct addr_with_flag *parse_conf(const char *file_name);
+
 struct res parse_res(char *res, size_t len, struct ignored_servers servers);
+
 struct server addr_to_string(struct addr_with_flag addr);
+
+struct tree *rech_inter(char *name, struct tree *t, int ind);
+
+struct tree *rech(char *name, struct tree *t);
