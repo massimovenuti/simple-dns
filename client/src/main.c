@@ -7,20 +7,103 @@ void ignore(struct addr_with_flag addr, struct ignored_servers *servers) {
     servers->nb_servers = (servers->nb_servers + 1) % MAX_IGNORED;
 }
 
+tree new_tree(char *name, struct addr_with_flag *addrs) {
+    tree t;
+    MCHK(t = malloc(sizeof(node)));
+    for (int i = 0; i < MAX_SONS; i++) {
+        t->sons[i] = NULL;
+    }
+    int count;
+    for (count = 0; count < MAX_ADDR && !addrs[count].end; count++) {
+        t->tab_addr[count] = addrs[count];
+    }
+    t->nb_addrs = count;
+    t->nb_sons = 0;
+    t->index = 0;
+    MCHK(strcpy(t->name, name));
+    return t;
+}
+
+tree adj_son(tree t, char *name, struct addr_with_flag *addrs) {
+    if (t == NULL)
+        return NULL;
+    tree son = new_tree(name, addrs);
+    if (t->nb_sons == 0) {
+        t->sons[0] = son;
+    } else {
+        destroy(t->sons[(t->nb_sons + 1) % MAX_SONS]);
+        t->sons[(t->nb_sons + 1) % MAX_SONS] = son;
+    }
+    t->nb_sons = (t->nb_sons == MAX_SONS) ? MAX_SONS : t->nb_sons + 1;
+    return son;
+}
+
+void destroy(tree t) {
+    if (t == NULL) {
+        return;
+    }
+    for (int i = 0; i < t->nb_sons; i++) {
+        destroy(t->sons[i]);
+    }
+    free(t);
+    return;
+}
+
+tree rech_inter(char *name, tree t, int ind) {
+    if (t == NULL)
+        return NULL;
+    if (t->nb_sons == 0) {
+        return t;
+    }
+    for (; ind > 0 && name[ind] != '.'; ind--);
+    for (int i = 0; i < t->nb_sons; i++) {
+        if (!strcmp(t->sons[i]->name, name + ind)) {
+            return rech_inter(name, t->sons[i], ind - 1);
+        }
+    }
+    return t;
+}
+
+tree rech(char *name, tree t) {
+    return rech_inter(name, t, strlen(name) - 1);
+}
+
+void print_tree(tree t) {
+    struct server s;
+    if (t == NULL) {
+        return;
+    }
+    printf("%s\n", t->name);
+    for (int i = 0; i < t->nb_addrs; i++) {
+        s = addr_to_string(t->tab_addr[i]); 
+        printf("%s:%s ", s.ip, s.port);
+    }
+    printf("\n");
+    for (int i = 0; i < t->nb_sons; i++) {
+        print_tree(t->sons[i]);
+    }
+}
+
 // ajouter un flag "check_sons"
 //on peut threader cette partie
-char *resolve(int soc, struct request *request, char *dst, struct tree *tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab) {    
-    struct tree *t_rech = rech(request->name, tree_addr);      // on regarde si on a pas déjà fait une requête similaire
+char *resolve(int soc, struct request *request, char *dst, tree tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab) {    
+    if (tree_addr == NULL)
+        return dst;
+    tree t_rech = rech(request->name, tree_addr);      // on regarde si on a pas déjà fait une requête similaire
+
+    if (t_rech == NULL) {
+        return dst;
+    }
 
     if (!strcmp(t_rech->name, request->name)) {                 // si on a déjà trouvé cette adresse, on renvoie directement le résultat
         struct server final_res = addr_to_string(*t_rech->tab_addr);
         snprintf(dst, REQLEN, "%s:%s", final_res.ip, final_res.port);
         return dst;
     }
-    else if (strcmp(t_rech->name, tree_addr->name)) {           // si on a déjà trouvé des domaines, sous-domaines, etc on reprend de la
+
+    if (strcmp(t_rech->name, tree_addr->name) != 0) {           // si on a déjà trouvé des domaines, sous-domaines, etc on reprend de la
         return resolve(soc, request, dst, t_rech, ignored_serv, monitoring, free_tab);
-    }
-    else {
+    } else {
         char req[REQLEN];
         char res[REQLEN];
 
@@ -67,51 +150,19 @@ char *resolve(int soc, struct request *request, char *dst, struct tree *tree_add
                             if (struc_res.code > 0) {
                                 find = true;
                                 retry = false;
+
+                                tree son = adj_son(tree_addr, struc_res.name, struc_res.addrs);
+
                                 if (!strcmp(request->name, struc_res.name)) {
-                                    /*
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    */
                                     struct server final_res = addr_to_string(*struc_res.addrs);
                                     free(struc_res.addrs);
-
                                     snprintf(dst, REQLEN, "%s:%s", final_res.ip, final_res.port);
                                     return dst;
                                 } else {
                                     request->id += 1;
-                                    /*
-                                    if (free_tab) {
-                                        free(tab_addr);
-                                    }
-                                    */       
-                                    struct tree new_tree_addr; 
-
-                                    strcpy(new_tree_addr.name, struc_res.name);
-                                    int count;
-                                    for (count = 0; count < MAX_ADDR && !struc_res.addrs[count].end; count++) {
-                                        new_tree_addr.tab_addr[count] = struc_res.addrs[count];
-                                    }
-                                    MCHK(new_tree_addr.sons = malloc(MAX_SONS * sizeof(struct tree)));
-                                    new_tree_addr.nb_sons = 0;
-                                    new_tree_addr.nb_addrs = count;
-                                    new_tree_addr.index = 0;
-
-                                    if (tree_addr->nb_sons == 0) {
-                                        tree_addr->sons[0] = new_tree_addr;
-                                    } else {
-                                        tree_addr->sons[(tree_addr->nb_sons + 1) % tree_addr->nb_sons] = new_tree_addr;
-                                    }
-                                    tree_addr->nb_sons = (tree_addr->nb_sons == MAX_SONS) ? MAX_SONS : tree_addr->nb_sons + 1;
-
-                                    return resolve(soc, request, dst, &new_tree_addr, ignored_serv, monitoring, true);
+                                    return resolve(soc, request, dst, son, ignored_serv, monitoring, true);
                                 }
                             } else {
-                                /*
-                                if (free_tab) {
-                                    free(tab_addr);
-                                }
-                                */
                                 snprintf(dst, REQLEN, "\33[1;31mNot found\033[0m");
                                 return dst;
                             }
@@ -122,14 +173,8 @@ char *resolve(int soc, struct request *request, char *dst, struct tree *tree_add
                 }
             }
         } while (retry && !(retry = false));
-        /*
-        if (free_tab) {
-            free(tab_addr);
-        }
-        */
         snprintf(dst, REQLEN, "\33[1;31mTimeout\033[0m");
     }
-
     return dst;
 }
 
@@ -139,24 +184,11 @@ int main(int argc, char const *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    struct addr_with_flag *tab_addr;
     struct ignored_servers ignored_serv;
     struct request request;
-    struct tree tree_addr;
     ignored_serv.nb_servers = 0;
 
-    tab_addr = parse_conf(argv[1]);
-
-    int i;
-    for (i = 0; !tab_addr[i].end; i++) {
-        tree_addr.tab_addr[i] = tab_addr[i];
-    }
-
-    tree_addr.nb_addrs = i;
-    tree_addr.nb_sons = 0;
-    tree_addr.index = 0;
-    MCHK(tree_addr.sons = malloc(MAX_SONS * sizeof(struct tree)));
-    strcpy(tree_addr.name, "\0");
+    tree tree_addr = new_tree("\0", parse_conf(argv[1])); 
 
     int soc;
     PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
@@ -180,7 +212,9 @@ int main(int argc, char const *argv[]) {
         request.id = 0;
         if (*request.name != '!') {
             //...
-            printf("%s, %s\n", request.name, resolve(soc, &request, res, &tree_addr, &ignored_serv, monitoring, false));
+            printf("%s, %s\n", request.name, resolve(soc, &request, res, tree_addr, &ignored_serv, monitoring, false));
+            //printf("Noeud racine: %s\n", tree_addr->name);
+            print_tree(tree_addr);
         } else {
             if (!strcmp(request.name, "!stop")) {
                 goon = false;
@@ -212,7 +246,7 @@ int main(int argc, char const *argv[]) {
         } else {
             if (*request.name != '!') {
                 //...
-                printf("%s, %s\n", request.name, resolve(soc, &request, res, &tree_addr, &ignored_serv, monitoring, false));
+                printf("%s, %s\n", request.name, resolve(soc, &request, res, tree_addr, &ignored_serv, monitoring, false));
             } else {
                 if (!strcmp(request.name, "!stop")) {
                     goon = false;
@@ -238,7 +272,8 @@ int main(int argc, char const *argv[]) {
         fclose(req_file);
     }
 
-    free(tab_addr);
+    destroy(tree_addr);
+    //free(tab_addr);
     //free...
     exit(EXIT_SUCCESS);
 }

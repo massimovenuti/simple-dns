@@ -20,6 +20,27 @@ struct request {
     char name[NAMELEN];
 };
 
-char *resolve(int soc, struct request *request, char *dst, struct tree *tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab);
+typedef struct s_node {
+    char name[NAMELEN];
+    struct addr_with_flag tab_addr[MAX_ADDR]; // à allouer dynamiquement...
+    int nb_addrs;
+    int index;
+    struct s_node *sons[MAX_SONS];
+    int nb_sons;
+} node, *tree;
+
+tree new_tree(char *name, struct addr_with_flag *addrs);
+
+tree adj_son(tree t, char *name, struct addr_with_flag *addrs);
+
+void destroy(tree t);
+
+tree rech_inter(char *name, tree t, int ind);
 
 void ignore(struct addr_with_flag addr, struct ignored_servers *servers);
+
+void print_tree(tree t);
+
+tree rech(char *name, tree t);
+
+char *resolve(int soc, struct request *request, char *dst, tree tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab);
