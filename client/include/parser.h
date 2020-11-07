@@ -58,7 +58,7 @@ struct tree {
     struct addr_with_flag tab_addr[MAX_ADDR]; // à allouer dynamiquement...
     int nb_addrs;
     int index;
-    struct tree sons[MAX_SONS]; // ne fonctionne pas, à allouer dynamiquement
+    struct tree *sons;
     int nb_sons;
 };
 

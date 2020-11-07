@@ -8,8 +8,9 @@ void ignore(struct addr_with_flag addr, struct ignored_servers *servers) {
 }
 
 // ajouter un flag "check_sons"
+//on peut threader cette partie
 char *resolve(int soc, struct request *request, char *dst, struct tree *tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab) {    
-    struct tree *t_rech = rech(request->name, *tree_addr);      // on regarde si on a pas déjà fait une requête similaire
+    struct tree *t_rech = rech(request->name, tree_addr);      // on regarde si on a pas déjà fait une requête similaire
 
     if (!strcmp(t_rech->name, request->name)) {                 // si on a déjà trouvé cette adresse, on renvoie directement le résultat
         struct server final_res = addr_to_string(*t_rech->tab_addr);
@@ -87,14 +88,23 @@ char *resolve(int soc, struct request *request, char *dst, struct tree *tree_add
                                     struct tree new_tree_addr; 
 
                                     strcpy(new_tree_addr.name, struc_res.name);
-                                    for (int tmp = 0; tmp < MAX_ADDR && !struc_res.addrs[tmp].end; tmp++) {
-                                        new_tree_addr.tab_addr[tmp] = struc_res.addrs[tmp];
+                                    int count;
+                                    for (count = 0; count < MAX_ADDR && !struc_res.addrs[count].end; count++) {
+                                        new_tree_addr.tab_addr[count] = struc_res.addrs[count];
                                     }
+                                    MCHK(new_tree_addr.sons = malloc(MAX_SONS * sizeof(struct tree)));
+                                    new_tree_addr.nb_sons = 0;
+                                    new_tree_addr.nb_addrs = count;
+                                    new_tree_addr.index = 0;
 
-                                    tree_addr->sons[(tree_addr->nb_sons + 1) % tree_addr->nb_sons] = new_tree_addr;
-                                    tree_addr->nb_sons = tree_addr->nb_sons = MAX_SONS ? MAX_SONS : tree_addr->nb_sons + 1;
+                                    if (tree_addr->nb_sons == 0) {
+                                        tree_addr->sons[0] = new_tree_addr;
+                                    } else {
+                                        tree_addr->sons[(tree_addr->nb_sons + 1) % tree_addr->nb_sons] = new_tree_addr;
+                                    }
+                                    tree_addr->nb_sons = (tree_addr->nb_sons == MAX_SONS) ? MAX_SONS : tree_addr->nb_sons + 1;
 
-                                    return resolve(soc, &request, dst, &new_tree_addr, ignored_serv, monitoring, true);
+                                    return resolve(soc, request, dst, &new_tree_addr, ignored_serv, monitoring, true);
                                 }
                             } else {
                                 /*
@@ -131,7 +141,7 @@ int main(int argc, char const *argv[]) {
 
     struct addr_with_flag *tab_addr;
     struct ignored_servers ignored_serv;
-    struct tab_requests requests;
+    struct request request;
     struct tree tree_addr;
     ignored_serv.nb_servers = 0;
 
@@ -142,7 +152,11 @@ int main(int argc, char const *argv[]) {
         tree_addr.tab_addr[i] = tab_addr[i];
     }
 
-    tree_addr.nb_addrs = i + 1;
+    tree_addr.nb_addrs = i;
+    tree_addr.nb_sons = 0;
+    tree_addr.index = 0;
+    MCHK(tree_addr.sons = malloc(MAX_SONS * sizeof(struct tree)));
+    strcpy(tree_addr.name, "\0");
 
     int soc;
     PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
@@ -154,30 +168,30 @@ int main(int argc, char const *argv[]) {
         MCHK(req_file = fopen(argv[2], "r"));
     }
 
-    int id = 0;
-    char name[NAMELEN];
+    //int id = 0;
+    //char name[NAMELEN];
     char res[NAMELEN];
     bool monitoring = false;
     bool goon = true;
     while (goon && interactif) {
         putchar('>');
         //...
-        scanf("%s", requests.requests[0].name);
-        requests.requests[0].id = 1;
-        if (*name != '!') {
+        scanf("%s", request.name);
+        request.id = 0;
+        if (*request.name != '!') {
             //...
-            printf("%s, %s\n", requests.requests[0].name, resolve(soc, &requests.requests[0], res, &tree_addr, &ignored_serv, monitoring, false));
+            printf("%s, %s\n", request.name, resolve(soc, &request, res, &tree_addr, &ignored_serv, monitoring, false));
         } else {
-            if (!strcmp(name, "!stop")) {
+            if (!strcmp(request.name, "!stop")) {
                 goon = false;
-            } else if (!strcmp(name, "!monitoring")) {
+            } else if (!strcmp(request.name, "!monitoring")) {
                 monitoring = !monitoring;
                 if (monitoring) {
                     fprintf(stderr, "monitoring:enabel\n");
                 } else {
                     fprintf(stderr, "monitoring:disabel\n");
                 }
-            } else if (!strcmp(name, "!ignored")) {
+            } else if (!strcmp(request.name, "!ignored")) {
                 fprintf(stderr, "ignored server:\n");
                 for (int i = 0; i < ignored_serv.nb_servers; i++) {
                     fprintf(stderr, "%s:%s\n", ignored_serv.servers[0].ip, ignored_serv.servers[0].port);
@@ -188,7 +202,7 @@ int main(int argc, char const *argv[]) {
     }
 
     while (goon && !interactif) {
-        if (fscanf(req_file, "%s", requests.requests[0].name) == EOF) {
+        if (fscanf(req_file, "%s", request.name) == EOF) {
             if (ferror(req_file)) {
                 perror("fscanf(req_file,\"%s\", name)");
                 exit(EXIT_FAILURE);
@@ -196,20 +210,20 @@ int main(int argc, char const *argv[]) {
                 goon = false;
             }
         } else {
-            if (*name != '!') {
+            if (*request.name != '!') {
                 //...
-                printf("%s, %s\n", name, resolve(soc, &requests.requests[0].name, res, &tree_addr, &ignored_serv, monitoring, false));
+                printf("%s, %s\n", request.name, resolve(soc, &request, res, &tree_addr, &ignored_serv, monitoring, false));
             } else {
-                if (!strcmp(name, "!stop")) {
+                if (!strcmp(request.name, "!stop")) {
                     goon = false;
-                } else if (!strcmp(name, "!monitoring")) {
+                } else if (!strcmp(request.name, "!monitoring")) {
                     monitoring = !monitoring;
                     if (monitoring) {
                         fprintf(stderr, "monitoring:enabel");
                     } else {
                         fprintf(stderr, "monitoring:disabel");
                     }
-                } else if (!strcmp(name, "!ignored")) {
+                } else if (!strcmp(request.name, "!ignored")) {
                     fprintf(stderr, "ignored server:\n");
                     for (int i = 0; i < ignored_serv.nb_servers; i++) {
                         fprintf(stderr, "%s:%s\n", ignored_serv.servers[0].ip, ignored_serv.servers[0].port);
@@ -225,5 +239,6 @@ int main(int argc, char const *argv[]) {
     }
 
     free(tab_addr);
+    //free...
     exit(EXIT_SUCCESS);
 }

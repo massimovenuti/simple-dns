@@ -130,8 +130,8 @@ struct tree *rech_inter(char *name, struct tree *t, int ind) {
     }
     for (; ind > 0 && name[ind] != '.'; ind--);
     for (int i = 0; i < t->nb_sons; i++) {
-        if (!strcmp(t->sons[i], name + ind - 1)) {
-            return rech_inter(name, t->sons[i], ind - 1);
+        if (!strcmp(t->sons[i].name, name + ind - 1)) {
+            return rech_inter(name, &t->sons[i], ind - 1);
         }
     }
     return t;

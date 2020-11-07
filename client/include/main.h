@@ -20,11 +20,6 @@ struct request {
     char name[NAMELEN];
 };
 
-struct tab_requests {
-    struct request requests[MAX_REQUESTS];
-    int nb_requests;
-};
-
 char *resolve(int soc, struct request *request, char *dst, struct tree *tree_addr, struct ignored_servers *ignored_serv, bool monitoring, bool free_tab);
 
 void ignore(struct addr_with_flag addr, struct ignored_servers *servers);
