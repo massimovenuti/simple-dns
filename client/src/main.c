@@ -56,8 +56,6 @@ void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request
         if (ferror(stream)) {
             perror("fscanf(req_file,\"%s\", name)");
             exit(EXIT_FAILURE);
-        } else {
-            goon = false;
         }
     } else {
         if (*input != '!') {
