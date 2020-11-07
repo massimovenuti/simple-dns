@@ -26,11 +26,11 @@ bool is_ignored(char *ip, char *port, struct ignored_servers servers) {
     return i != servers.nb_servers;
 }
 
-struct addr_with_flag *parse_conf(const char *file_name) {
-    struct addr_with_flag *res;
+struct tab_addr parse_conf(const char *file_name) {
+    struct tab_addr res;
     int max_addrs = TABSIZE;
 
-    MCHK(res = malloc(max_addrs * sizeof(struct addr_with_flag)));
+    MCHK(res.addr = malloc(max_addrs * sizeof(struct sockaddr_in6)));
 
     FILE *file;
 
@@ -43,13 +43,11 @@ struct addr_with_flag *parse_conf(const char *file_name) {
     for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
         if (i >= max_addrs) {
             max_addrs *= INCREASE_COEF;
-            MCHK(res = realloc(res, max_addrs * sizeof(struct addr_with_flag)));
+            MCHK(res.addr = realloc(res.addr, max_addrs * sizeof(struct sockaddr_in6)));
         }
-        convert(ip, port, &res[i].addr);
-        res[i].end = false;
-        res[i].ignore = false;
+        convert(ip, port, &res.addr[i]);
     }
-    res[i].end = true;
+    res.len = i + 1;
 
     PCHK(fclose(file));
     return res;
@@ -83,9 +81,10 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
     token = strtok(tab_addr, SEPARATOR);
 
     if (token == NULL) {
-        s_res.addrs = NULL;
+        s_res.addrs.addr = NULL;
+        s_res.addrs.len = 0;
     } else {
-        s_res.addrs = malloc(max_addrs * sizeof(struct addr_with_flag));
+        s_res.addrs.addr = malloc(max_addrs * sizeof(struct sockaddr_in6));
         do {
             if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
                 fprintf(stderr, "Server result incorrect\n");
@@ -97,46 +96,27 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
             }
             if (nb_addrs > max_addrs) {
                 max_addrs *= INCREASE_COEF;
-                MCHK(s_res.addrs = realloc(s_res.addrs, max_addrs * sizeof(struct addr_with_flag)));
+                MCHK(s_res.addrs.addr = realloc(s_res.addrs.addr, max_addrs * sizeof(struct sockaddr_in6)));
             }
             if (!is_ignored(ip, port, servers)) {
-                convert(ip, atoi(port), &s_res.addrs[nb_addrs].addr);
-                s_res.addrs[nb_addrs].ignore = false;
-                s_res.addrs[nb_addrs].end = false;
+                convert(ip, atoi(port), &s_res.addrs.addr[nb_addrs]);
                 nb_addrs++;
             }
             token = strtok(NULL, SEPARATOR);
         } while (token != NULL);
-        s_res.addrs[nb_addrs].end = true;
+        s_res.addrs.len = nb_addrs + 1;
     }
 
     return s_res;
 }
 
-struct server addr_to_string(struct addr_with_flag addr) {
+struct server addr_to_string(struct sockaddr_in6 addr) {
     struct server res;
-    sprintf(res.port, "%d", ntohs(addr.addr.sin6_port));
-    if (addr.addr.sin6_family == AF_INET6) {
-        inet_ntop(AF_INET6, &addr.addr.sin6_addr, res.ip, sizeof(addr.addr));
+    sprintf(res.port, "%d", ntohs(addr.sin6_port));
+    if (addr.sin6_family == AF_INET6) {
+        inet_ntop(AF_INET6, &addr.sin6_addr, res.ip, sizeof(addr));
     } else {
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr.addr))->sin_addr, res.ip, sizeof(addr.addr));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, res.ip, sizeof(addr));
     }
     return res;
-}
-
-struct tree *rech_inter(char *name, struct tree *t, int ind) {
-    if (t->nb_sons == 0) {
-        return t;
-    }
-    for (; ind > 0 && name[ind] != '.'; ind--);
-    for (int i = 0; i < t->nb_sons; i++) {
-        if (!strcmp(t->sons[i], name + ind - 1)) {
-            return rech_inter(name, t->sons[i], ind - 1);
-        }
-    }
-    return t;
-}
-
-struct tree *rech(char *name, struct tree *t) {
-    return rech_inter(name, t, strlen(name) - 1);
 }

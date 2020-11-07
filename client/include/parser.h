@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 #include "macro.h"
 
@@ -26,11 +26,9 @@
 
 #define SEPARATOR "|"
 
-
-struct addr_with_flag {
-    struct sockaddr_in6 addr;
-    bool ignore; // à enlever
-    bool end;
+struct tab_addr {
+    struct sockaddr_in6 *addr;
+    size_t len;
 };
 
 struct server {
@@ -43,35 +41,21 @@ struct ignored_servers {
     int nb_servers;
 };
 
-struct res
-{
+struct res {
     int id;
     struct timeval time;
     char req_name[100];
     int code;
     char name[100];
-    struct addr_with_flag *addrs;
-};
-
-struct tree {
-    char name[NAMELEN];
-    struct addr_with_flag tab_addr[MAX_ADDR]; // à allouer dynamiquement...
-    int nb_addrs;
-    int index;
-    struct tree sons[MAX_SONS]; // ne fonctionne pas, à allouer dynamiquement
-    int nb_sons;
+    struct tab_addr addrs;
 };
 
 bool is_ignored(char *ip, char *port, struct ignored_servers servers);
 
 void convert(char ip[], int port, struct sockaddr_in6 *dst);
 
-struct addr_with_flag *parse_conf(const char *file_name);
+struct tab_addr parse_conf(const char *file_name);
 
 struct res parse_res(char *res, size_t len, struct ignored_servers servers);
 
-struct server addr_to_string(struct addr_with_flag addr);
-
-struct tree *rech_inter(char *name, struct tree *t, int ind);
-
-struct tree *rech(char *name, struct tree *t);
+struct server addr_to_string(struct sockaddr_in6 addr);
