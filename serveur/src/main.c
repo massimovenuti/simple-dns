@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Massimo Venuti, Alexandre Vogel
- * @brief Serveur de nom
+ * @brief Serveur de nom DNS - fichier source
  * @date 2020-11-16
  * 
  */
@@ -39,7 +39,6 @@ void* processes_request(void* arg) {
  * @brief Entrée du programme
  * 
  * Usage: <port> <path of config file>
- * 
  */
 int main(int argc, char const* argv[]) {
     if (argc != 3) {

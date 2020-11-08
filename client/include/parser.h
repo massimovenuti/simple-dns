@@ -1,3 +1,11 @@
+/**
+ * @file parser.h
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Parser côté client - fichier en-tête
+ * @date 2020-11-16
+ * 
+ */
+
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <stdio.h>

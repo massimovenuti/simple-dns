@@ -1,3 +1,11 @@
+/**
+ * @file main.c
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Client - fichier source
+ * @date 2020-11-16
+ * 
+ */
+
 #include "main.h"
 
 void ignore(struct addr_with_flag addr, struct ignored_servers *servers) {

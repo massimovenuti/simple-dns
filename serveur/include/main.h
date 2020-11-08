@@ -1,7 +1,7 @@
 /**
  * @file main.h
  * @author Massimo Venuti, Alexandre Vogel
- * @brief Serveur de nom - fichier en-tête
+ * @brief Serveur de nom DNS - fichier en-tête
  * @date 2020-11-16
  * 
  */

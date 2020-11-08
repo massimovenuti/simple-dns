@@ -1,4 +1,13 @@
+/**
+ * @file parser.c
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Parser côté client - fichier source
+ * @date 2020-11-16
+ * 
+ */
+
 #include "parser.h"
+
 
 void convert(char ip[], int port, struct sockaddr_in6 *dst) {
     int check;

@@ -1,3 +1,11 @@
+/**
+ * @file main.h
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Client - fichier en-tête
+ * @date 2020-11-16
+ * 
+ */
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
