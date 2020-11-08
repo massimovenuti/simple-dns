@@ -1,5 +1,20 @@
+/**
+ * @file parser.c
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Parser côté serveur - fichier source
+ * @date 2020-11-16
+ * 
+ */
+
 #include "parser.h"
 
+/**
+ * @brief Initialise un tableau de struct name
+ * 
+ * @param names Tableau de struct name - doit être alloué
+ * @param start Inidice du premier élément du tableau à initialiser
+ * @param end Indicie du dernier élément du tableau à intialiser
+ */
 void init_names(struct name *names, int start, int end) {
     for (int i = start; i < end; i++) {
         names[i].nb_servers = 0;
@@ -8,6 +23,11 @@ void init_names(struct name *names, int start, int end) {
     }
 }
 
+/**
+ * @brief Libère un tableau de struct name
+ * 
+ * @param names Tableau de struct name - doit être alloué
+ */
 void free_names(struct name *names) {
     for (int i = 0; names[i].servers != NULL; i++) {
         free(names[i].servers);
@@ -15,12 +35,35 @@ void free_names(struct name *names) {
     free(names);
 }
 
+/**
+ * @brief Compare deux chaînes de caractères
+ * 
+ * Test si deux chaînes de caractères sont identiques sans prendre en compte un
+ * éventuel caractère "." devant la seconde chaîne.
+ * 
+ * Exemple: compare("fr", ".fr") renvoie vrai
+ * 
+ * @param s1 Première chaîne de caractères à comparer
+ * @param s2 Deuxième chaîne de caractères à comparer
+ * @return true Si les chaînes sont identiques à un éventuel caractère "." près
+ * @return false Sinon
+ */
 bool compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
         return false;
     return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2);
 }
+
+/**
+ * @brief Parse un fichier de configuration
+ * 
+ * Récupère la liste des noms et des adresses contenues dans un fichier de 
+ * configuration.
+ * 
+ * @param file_name Fichier de configuration
+ * @return struct name* Liste des noms avec adresses
+ */
 
 struct name *parse_conf(const char *file_name) {
     struct name *res;
@@ -74,6 +117,16 @@ struct name *parse_conf(const char *file_name) {
     return res;
 }
 
+/**
+ * @brief Parse une requête
+ * 
+ * Extrait la partie "nom" d'une requête.
+ * 
+ * @param dest Chaîne qui va contenir le résultat - doit être allouée
+ * @param src Chaîne représentant la requête à parser sous le format <id>|<time>|<nom>
+ * @return true Si succès
+ * @return false Sinon
+ */
 bool parse_req(char *dest, char *src) {
     if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) {
         return true;
@@ -81,6 +134,19 @@ bool parse_req(char *dest, char *src) {
     return false;
 }
 
+/**
+ * @brief Augmente la taille mémoire d'une chaîne si elle est trop petite
+ * 
+ * Augmente la taille mémoire d'une chaîne de caractères avec une taille 
+ * souhaitée. Si la taille souhaitée est plus petite que la taille actuelle de
+ * la chaîne, rien n'est modifié.
+ * 
+ * @param dest Chaîne de caractères à tester
+ * @param size_dest Taille actuelle de dest
+ * @param size_src Nouvelle taille souhaitée
+ * @return true Si la taille mémoire de dest a été augmentée
+ * @return false Sinon
+ */
 bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     int x = false;
     if (*size_dest < size_src) {
@@ -91,6 +157,18 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
     return x;
 }
 
+/**
+ * @brief Construit la réponse à une requête
+ * 
+ * @param dest Chaîne qui va contenir le résultat - doit être allouée
+ * @param src Chaîne représentant la requête sous le format <id>|<time>|<nom>
+ * @param names Liste des noms avec adresses propres au serveur
+ * @param len_dest Longueur de la chaîne dest - modifiée par la fonction
+ * @param len_src Longueur de la chaîne src
+ * @param max_len_dest Taille maximale de dest - modifiée par la fonction
+ * @return true Si la requête aboutit à un succès
+ * @return false Sinon
+ */
 bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
     char name[NAMELEN];
 

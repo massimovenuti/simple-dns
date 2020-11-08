@@ -1,11 +1,27 @@
+/**
+ * @file main.c
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Serveur de nom
+ * @date 2020-11-16
+ * 
+ */
+
 #include "main.h"
 
+/**
+ * @brief Traite une requête
+ * 
+ * Récupère une requête puis crée et envoie la réponse.
+ * 
+ * @param arg Arguments du thread: struct thread_arg
+ * @return void* NULL
+ */
 void* processes_request(void* arg) {
     struct thread_arg info = *(struct thread_arg*)arg;
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
     size_t alloc_mem = RESLEN * sizeof(char);
-    char *res = malloc(alloc_mem);
+    char* res = malloc(alloc_mem);
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
     size_t len_res;
@@ -19,6 +35,12 @@ void* processes_request(void* arg) {
     return NULL;
 }
 
+/**
+ * @brief Entrée du programme
+ * 
+ * Usage: <port> <path of config file>
+ * 
+ */
 int main(int argc, char const* argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: <port> <path of config file>");

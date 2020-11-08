@@ -1,3 +1,11 @@
+/**
+ * @file main.h
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Serveur de nom - fichier en-tête
+ * @date 2020-11-16
+ * 
+ */
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -18,6 +26,10 @@
 #define REQLEN 512
 #define RESLEN 1024
 
+/**
+ * @brief Objet contenant les arguments d'un thread
+ * 
+ */
 struct thread_arg {
     int soc;
     struct name *tab_of_addr;

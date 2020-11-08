@@ -1,3 +1,11 @@
+/**
+ * @file parser.h
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Parser côté serveur - fichier en-tête
+ * @date 2020-11-16
+ * 
+ */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,11 +25,19 @@
 #define SEPARATOR "|"
 #define SUBSEPARATOR ","
 
+/**
+ * @brief Objet représentant un serveur de nom
+ * 
+ */
 struct server {
     char ip[IPLEN];
     char port[PORTLEN];
 };
 
+/**
+ * @brief Objet représentant un nom de domaine
+ * 
+ */
 struct name {
     char name[NAMELEN];
     struct server *servers;
