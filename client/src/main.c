@@ -31,8 +31,8 @@ tree adj_son(tree t, char *name, struct addr_with_flag *addrs) {
     if (t->nb_sons == 0) {
         t->sons[0] = son;
     } else {
-        destroy(t->sons[(t->nb_sons + 1) % MAX_SONS]);
-        t->sons[(t->nb_sons + 1) % MAX_SONS] = son;
+        destroy(t->sons[(t->nb_sons) % MAX_SONS]);
+        t->sons[(t->nb_sons) % MAX_SONS] = son;
     }
     t->nb_sons = (t->nb_sons == MAX_SONS) ? MAX_SONS : t->nb_sons + 1;
     return son;
@@ -50,12 +50,17 @@ void destroy(tree t) {
 }
 
 tree rech_inter(char *name, tree t, int ind) {
-    if (t == NULL)
-        return NULL;
-    if (t->nb_sons == 0) {
+    if (t == NULL || t->nb_sons == 0) {
         return t;
     }
-    for (; ind > 0 && name[ind] != '.'; ind--);
+    if (*t->name != '\0') {
+        for (; ind > 0 && name[ind] == t->name[ind]; ind--);
+        ind--;
+        for (; ind > 0 && name[ind] != '.'; ind--);
+        ind++;
+    } else {
+        for (; ind > 0 && name[ind] != '.'; ind--);
+    }
     for (int i = 0; i < t->nb_sons; i++) {
         if (!strcmp(t->sons[i]->name, name + ind)) {
             return rech_inter(name, t->sons[i], ind - 1);
