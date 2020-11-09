@@ -1,3 +1,6 @@
+#ifndef __PARSER_H__
+#define __PARSER_H__
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,3 +45,5 @@ bool parse_req(char *dest, char *src);
 bool increase_memsize(char *dest, size_t *size_dest, size_t size_src);
 
 bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest);
+
+#endif

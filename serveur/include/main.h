@@ -1,3 +1,6 @@
+#ifndef __MAIN_H__
+#define __MAIN_H__
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -10,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
+
 #include <unistd.h>
 
 #include "macro.h"
@@ -22,3 +26,5 @@ struct thread_arg {
     int soc;
     struct name *tab_of_addr;
 };
+
+#endif
