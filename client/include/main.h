@@ -1,3 +1,6 @@
+#ifndef __MAIN_H__
+#define __MAIN_H_
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -9,40 +12,21 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "addr.h"
 #include "macro.h"
 #include "parser.h"
+#include "req.h"
 
 #define REQLEN 512
 
+bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
-struct request {
-    int id;
-    char name[NAMELEN];
-    struct tab_addrs dest_addrs;
-    int index;
-};
+void send_req(int soc, struct req *req, laddr ignored, laddr used, bool monitoring);
 
-struct tab_requests {
-    struct request requests[MAX_REQUESTS];
-    int len;
-};
+struct res receive_res(int soc, laddr ignored, laddr used, bool monitoring);
 
-void init_tab_addrs(struct tab_addrs *a);
+void read_input(FILE *stream, int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr ignored, laddr used, bool *goon, bool *monitoring);
 
-void init_tab_requests(struct tab_requests *r);
+void read_network(int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr ignored, laddr used, bool *monitoring);
 
-bool rm_request(struct tab_requests *r, int id);
-
-bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
-
-void ignore(struct sockaddr_in6 addr, struct tab_addrs *ignored);
-
-bool is_ignored(struct sockaddr_in6 addr, struct tab_addrs ignored);
-
-void send_req(int soc, struct request *request, struct tab_addrs ignored, struct tab_addrs *used, bool monitoring);
-
-struct res receive_res(int soc, struct tab_addrs ignored, struct tab_addrs *used, bool monitoring);
-
-void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request, struct tab_addrs root_addr, struct tab_addrs ignored, struct tab_addrs *used, bool *goon, bool *monitoring);
-
-void read_network(int soc, int *id, struct tab_requests *tab_request, struct tab_addrs root_addr, struct tab_addrs ignored, struct tab_addrs *used, bool *monitoring);
+#endif
