@@ -2,9 +2,8 @@ stages:
   - build
   - test
 
-image: gcc
-
 build-client:
+  image: gcc
   stage: build
   before_script:
     - apt update && apt -y install make
@@ -19,6 +18,7 @@ build-client:
       - client/**/*
 
 build-serveur:
+  image: gcc
   stage: build
   before_script:
     - apt update && apt -y install make
@@ -33,6 +33,7 @@ build-serveur:
       - serveur/**/*
 
 test-client:
+  image: ubuntu:18.04
   stage: test
   script:
     - cd client
@@ -43,6 +44,7 @@ test-client:
       - client/**/*
 
 test-serveur:
+  image: ubuntu:18.04
   stage: test
   before_script:
     - apt update && apt -y install netcat valgrind
