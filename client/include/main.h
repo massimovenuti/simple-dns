@@ -18,6 +18,7 @@
 #include "req.h"
 
 #define REQLEN 512
+#define TIMEOUT 5
 
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 

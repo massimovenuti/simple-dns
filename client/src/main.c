@@ -7,7 +7,8 @@ bool is_ignored(laddr l, struct sockaddr_in6 addr) {
 bool timeout(struct req r) {
     struct timeval cur_t;
     PCHK(gettimeofday(&cur_t, NULL));
-    return timercmp(&r.t, &cur_t, >=);
+    cur_t.tv_sec -= TIMEOUT;
+    return timercmp(&cur_t, &r.t, >=);
 }
 
 void check_timeout(int soc, lreq lr, laddr suspicious, laddr ignored, bool monitoring) {
@@ -18,6 +19,7 @@ void check_timeout(int soc, lreq lr, laddr suspicious, laddr ignored, bool monit
                 suspicious = laddr_add(suspicious, *addr);
                 send_req(soc, &tmp->req, ignored, monitoring);
             } else {
+                //fprintf(stderr, "%s:\nTIMEOUT", tmp->req.name);
                 ignored = laddr_add(ignored, *addr);
                 suspicious = laddr_rm(suspicious, *addr);
                 tmp->req.index = get_index(lr, tmp->req);
@@ -159,6 +161,7 @@ int main(int argc, char const *argv[]) {
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, monitoring);
         } else {
+            check_timeout(soc, reqs, suspicious, ignored, monitoring);
         }
     }
 
