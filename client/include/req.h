@@ -32,6 +32,8 @@ typedef struct s_lreq {
 
 struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
 
+void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs);
+
 int get_index(lreq l, struct req req);
 
 lreq lreq_new();

@@ -23,7 +23,7 @@ bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
 void send_req(int soc, struct req *req, laddr ignored, bool monitoring);
 
-struct res receive_res(int soc, laddr ignored, bool monitoring);
+struct res receive_res(int soc, bool monitoring);
 
 void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, bool *goon, bool *monitoring);
 
