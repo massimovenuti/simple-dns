@@ -165,39 +165,38 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
 
     if (!parse_req(name, src)) {
         fprintf(stderr, "Request incorrect\n");
-        exit(EXIT_FAILURE);
-    }
+        return false;
+    } else {
+        *len_dest = len_src + 2;
+        increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
+        MCHK(strcat(strcpy(dest, src), SEPARATOR));
 
-    *len_dest = len_src + 2;
-    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-    MCHK(strcat(strcpy(dest, src), SEPARATOR));
-
-    int i, j;
-    bool found = false;
-    for (i = 0; names[i].nb_servers != 0; i++) {
-        if (compare(name, names[i].name)) {
-            found = true;
-            MCHK(strcat(dest, SUCCESS));
-            for (j = 0; j < names[i].nb_servers; j++) {
-                *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
-                increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-                MCHK(strcat(dest, SEPARATOR));
-                MCHK(strcat(dest, names[i].name));
-                MCHK(strcat(dest, SUBSEPARATOR));
-                MCHK(strcat(dest, names[i].servers[j].ip));
-                MCHK(strcat(dest, SUBSEPARATOR));
-                MCHK(strcat(dest, names[i].servers[j].port));
+        int i, j;
+        bool found = false;
+        for (i = 0; names[i].nb_servers != 0; i++) {
+            if (compare(name, names[i].name)) {
+                found = true;
+                MCHK(strcat(dest, SUCCESS));
+                for (j = 0; j < names[i].nb_servers; j++) {
+                    *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
+                    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
+                    MCHK(strcat(dest, SEPARATOR));
+                    MCHK(strcat(dest, names[i].name));
+                    MCHK(strcat(dest, SUBSEPARATOR));
+                    MCHK(strcat(dest, names[i].servers[j].ip));
+                    MCHK(strcat(dest, SUBSEPARATOR));
+                    MCHK(strcat(dest, names[i].servers[j].port));
+                }
             }
         }
-    }
 
-    MCHK(strcat(dest, "\0"));
-    if (!found) {
-        *len_dest += 2;
-        MCHK(strcat(dest, FAIL));
-        MCHK(strcat(dest, SEPARATOR));
-        return false;
-    }
+        MCHK(strcat(dest, "\0"));
+        if (!found) {
+            *len_dest += 2;
+            MCHK(strcat(dest, FAIL));
+            MCHK(strcat(dest, SEPARATOR));
+        }
 
-    return true;
+        return true;
+    }
 }

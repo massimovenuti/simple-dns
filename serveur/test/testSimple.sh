@@ -34,50 +34,85 @@ function test_bad_file() {
     fin_test
 }
 
+function test_run() {
+    debut_test 3 "Test d'execution"
+    local FAIL=0
+    (sleep 5 && echo "stop") | $1 $2 $3 || FAIL=1
+    test $FAIL -eq 0 || fail "execution"
+    fin_test
+}
+
 function test_req() {
-    debut_test 3 "Test de requet"
+    debut_test 4 "Test de requet"
     
     printf "1|123,456|toto.fr\n|1|.fr,127.0.0.1,6060|.fr,::1,6060" > $4/wait.txt
 
-    (sleep 5 && echo "stop") | $1 $2 $3 &
-    sleep 1 && (echo "1|123,456|toto.fr"; sleep 1) | nc -u4 127.0.0.1 $2 > $4/res.txt &
+    local FAIL=0
+    ((sleep 5 && echo "stop") | $1 $2 $3 || FAIL=1) &
+    (sleep 1 && (echo "1|123,456|toto.fr"; sleep 1) | nc -u4 127.0.0.1 $2 &> $4/res.txt || FAIL=1) &
     wait
 
-    diff $4/wait.txt $4/res.txt || fail "envoi d'un requet IPV4"
+    diff $4/wait.txt $4/res.txt
+    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV4"
 
-    (sleep 5 && echo "stop") | $1 $2 $3 &
-    sleep 1 && (echo "1|123,456|toto.fr"; sleep 1) | nc -u6 ::1 $2 > $4/res.txt &
+    ((sleep 5 && echo "stop") | $1 $2 $3 || FAIL=1) &
+    (sleep 1 && (echo "1|123,456|toto.fr"; sleep 1) | nc -u6 ::1 $2 &> $4/res.txt || FAIL=1) &
     wait
 
-    diff $4/wait.txt $4/res.txt || fail "envoi d'un requet IPV6"
+    diff $4/wait.txt $4/res.txt
+    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV6"
+
+    ((sleep 5 && echo "stop") | $1 $2 $3 &> /dev/null || FAIL=1) &
+    (sleep 1 && (echo "Oh, des regrets, des regrets, des regrets"; sleep 1) | nc -u6 ::1 $2 &> $4/res.txt || FAIL=1) &
+    wait
+
+    test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requet invalide"
+
     rm $4/wait.txt
     rm $4/res.txt
     fin_test
 }
 
 function test_charge() {
-    debut_test 3 "Test de charge"
-    (sleep 10 && echo "stop") | $1 $2 $3 &
+    debut_test 5 "Test de charge"
+    local FAIL=0
+    ((sleep 30 && echo "stop") | $1 $2 $3 || FAIL=1) &
     sleep 1
     for i in {1..1000}
     do
-        echo "1|123,456|toto.fr" | nc -u ::1 $2 > /dev/null
+        echo "1|123,456|toto.fr" | nc -u ::1 $2 &> /dev/null || FAIL=1
     done
-    test $? || fail "testde charge"
+    test $FAIL -eq 0 || fail "testde charge"
+    fin_test
+}
+
+function test_memoir() {
+    debut_test 6 "Test de memoir"
+    local FAIL=0
+    ((sleep 30 && echo "stop") | valgrind --leak-check=full $1 $2 $3 &> /dev/null || FAIL=1) &
+    sleep 1
+    for i in {1..1000}
+    do
+        echo "1|123,456|toto.fr" | nc -u ::1 $2 &> /dev/null || FAIL=1
+    done
+    test $FAIL -eq 0 || fail "testde charge"
     fin_test
 }
 
 EXE=./bin/serveur
 PORT=4242
 CONF=./samples/test1.conf
+CHARGE_CONF=./samples/charge.conf
 TMPDIR=tmp
 
 mkdir $TMPDIR
 
 test_bad_arg $EXE $PORT
 test_bad_file $EXE $PORT
+test_run $EXE $PORT $CONF
 test_req $EXE $PORT $CONF $TMPDIR
-test_charge $EXE $PORT $CONF
+test_charge $EXE $PORT $CHARGE_CONF
+test_memoir $EXE $PORT $CHARGE_CONF
 
 rmdir $TMPDIR
 
