@@ -35,7 +35,7 @@ struct tab_addrs parse_conf(const char *file_name) {
         }
         res.addrs[i] = convert(ip, port);
     }
-    res.len = i + 1;      /* /!\ peut être une erreur */
+    res.len = i;      /* /!\ peut être une erreur */
     PCHK(fclose(file));
     return res;
 }
