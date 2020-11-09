@@ -1,28 +1,24 @@
 #include "req.h"
 
-struct req new_req(lreq l, int id, char *name, struct tab_addrs addrs) {
+struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
     struct req req;
-    struct timeval t;
-    t.tv_sec = 1;   // à modifier
-    t.tv_usec = 0;  // à modifier
     req.id = id;
     strcpy(req.name, name);
     req.dest_addrs = addrs;
-    req.t = t;
-    req.index = get_index(l, req);
-    l = lreq_add(l, req);
+    req.index = get_index(*l, req);
+    *l = lreq_add(*l, req);
     return req;
 }
 
 int get_index(lreq l, struct req req) {
     int index = 0;
     lreq tmp;
-    for (tmp = l; !lreq_empty(l); tmp = tmp->next) {
-        if (addr_in(req.dest_addrs.addrs[0], tmp->req.dest_addrs) && tmp->req.index > index) {
-            index = tmp->req.index;
+    for (tmp = l; !lreq_empty(tmp); tmp = tmp->next) {
+        if (addr_in(req.dest_addrs.addrs[0], tmp->req.dest_addrs) && tmp->req.index + 1 > index) {
+            index = tmp->req.index + 1;
         }
     }
-    return index + 1;
+    return index;
 }
 
 lreq lreq_new() {
@@ -48,14 +44,15 @@ lreq lreq_add(lreq l, struct req x) {
 
 lreq lreq_rm(lreq l, int id) {
     if (lreq_empty(l)) {
-        return lreq_new();
+        return l;
     }
     if (l->req.id == id) {
         lreq n = l->next;
         free(l);
         return n;
     }
-    return lreq_rm(l->next, id);
+    l->next = lreq_rm(l->next, id);
+    return l;
 }
 
 struct req lreq_elem(lreq l, int i) {

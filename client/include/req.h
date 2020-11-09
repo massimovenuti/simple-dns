@@ -30,7 +30,7 @@ typedef struct s_lreq {
     struct s_lreq *next;
 } * lreq;
 
-struct req new_req(lreq l, int id, char *name, struct tab_addrs addrs);
+struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
 
 int get_index(lreq l, struct req req);
 
