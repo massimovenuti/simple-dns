@@ -4,7 +4,7 @@ bool is_ignored(laddr l, struct sockaddr_in6 addr) {
     return !laddr_empty(laddr_search(l, addr));
 }
 
-void send_req(int soc, struct req *req, laddr ignored, laddr used, bool monitoring) {
+void send_req(int soc, struct req *req, laddr ignored, laddr *used, bool monitoring) {
     char req_char[REQLEN];
 
     struct timeval t;
@@ -18,17 +18,19 @@ void send_req(int soc, struct req *req, laddr ignored, laddr used, bool monitori
         fprintf(stderr, "req: %s\n", req_char);
 
     bool send = false;
-    for (int i = req->index; i < req->dest_addrs.len && send; i++) {
+    int i = req->index;
+    for (int n = 0; n < req->dest_addrs.len && !send; n++) {
         if (!is_ignored(ignored, req->dest_addrs.addrs[i])) {  //&& minimal_use()) {
             PCHK(sendto(soc, req_char, len_req + 1, 0, (struct sockaddr *)&req->dest_addrs.addrs[i], (socklen_t)sizeof(struct sockaddr_in6)));
             req->index = i;
-            laddr_add(used, req->dest_addrs.addrs[i]);
+            *used = laddr_add(*used, req->dest_addrs.addrs[i]);
             send = true;
         }
+        i = (i + 1) % req->dest_addrs.len;
     }
 }
 
-struct res receive_res(int soc, laddr ignored, laddr used, bool monitoring) {
+struct res receive_res(int soc, laddr ignored, laddr *used, bool monitoring) {
     char res[REQLEN];
     (void)ignored;
 
@@ -37,7 +39,7 @@ struct res receive_res(int soc, laddr ignored, laddr used, bool monitoring) {
     ssize_t len_res;
 
     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
-    laddr_rm(used, src_addr);
+    *used = laddr_rm(*used, src_addr);
     struct res struc_res = parse_res(res);
 
     if (monitoring) {
@@ -48,7 +50,7 @@ struct res receive_res(int soc, laddr ignored, laddr used, bool monitoring) {
     return struc_res;
 }
 
-void read_input(FILE *stream, int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr ignored, laddr used, bool *goon, bool *monitoring) {
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr *used, bool *goon, bool *monitoring) {
     (void)goon;
     char input[NAMELEN];
     if (fscanf(stream, "%s", input) == EOF) {
@@ -60,10 +62,10 @@ void read_input(FILE *stream, int soc, int *id, lreq reqs, struct tab_addrs root
         if (*input != '!') {
             struct req req = new_req(reqs, *id, input, root_addr);
             *id += 1;
-            send_req(soc, &req, ignored, used, monitoring);
+            send_req(soc, &req, ignored, used, *monitoring);
         } else {
             if (!strcmp(input, "!stop")) {
-                goon = false;
+                *goon = false;
             } else if (!strcmp(input, "!monitoring")) {
                 *monitoring = !*monitoring;
                 if (monitoring) {
@@ -79,10 +81,9 @@ void read_input(FILE *stream, int soc, int *id, lreq reqs, struct tab_addrs root
     }
 }
 
-void read_network(int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr ignored, laddr used, bool *monitoring) {
-    (void)root_addr;
+void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *used, bool monitoring) {
     struct res res = receive_res(soc, ignored, used, monitoring);
-    lreq active_req = lreq_search(reqs, res.id);
+    lreq active_req = lreq_search(*reqs, res.id);
     if (lreq_empty(active_req)) {
         return;
     }
@@ -90,7 +91,12 @@ void read_network(int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr
 
     if (res.code > 0) {
         if (!strcmp(res.req_name, res.name)) {
-            lreq_rm(reqs, res.id);
+            printf("%s:\n", res.name);
+            for (int i = 0; i < res.addrs.len; i++) {
+                fprint_addr(stdout, res.addrs.addrs[i]);
+            }
+            printf("\n");
+            *reqs = lreq_rm(*reqs, res.id);
         } else {
             active_req->req.id = *id;
             active_req->req.index = 0;
@@ -98,8 +104,10 @@ void read_network(int soc, int *id, lreq reqs, struct tab_addrs root_addr, laddr
             *id += 1;
         }
     } else {
-        lreq_rm(reqs, res.id);
+        printf("%s:\n", active_req->req.name);
         printf("\33[1;31mNot found\033[0m\n");
+        printf("\n");
+        *reqs = lreq_rm(*reqs, res.id);
     }
 }
 
@@ -141,23 +149,26 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, reqs, root_addr, ignored, used, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, reqs, root_addr, ignored, used, &monitoring);
+            read_network(soc, &id, &reqs, ignored, &used, monitoring);
         } else {
         }
     }
 
     while (goon && !interactif) {
+        while (!feof(req_file)) {
+            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
+        }
+
         FD_ZERO(&ensemble);
         FD_SET(STDIN_FILENO, &ensemble);
         FD_SET(soc, &ensemble);
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, reqs, root_addr, ignored, used, &goon, &monitoring);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, reqs, root_addr, ignored, used, &monitoring);
+            read_network(soc, &id, &reqs, ignored, &used, monitoring);
         } else {
         }
     }

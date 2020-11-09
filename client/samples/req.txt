@@ -1,0 +1,4 @@
+toto.fr
+riri.toto.fr
+fifi.fr
+loulou.toto.fr
