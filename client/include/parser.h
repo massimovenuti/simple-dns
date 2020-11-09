@@ -26,19 +26,10 @@
 
 #define SEPARATOR "|"
 
-struct tab_addr {
-    struct sockaddr_in6 *addr;
-    size_t len;
-};
 
-struct server {
-    char ip[IPLEN];
-    char port[PORTLEN];
-};
-
-struct ignored_servers {
-    struct server servers[10];
-    int nb_servers;
+struct tab_addrs {
+    struct sockaddr_in6 *addrs;
+    int len;
 };
 
 struct res {
@@ -47,15 +38,13 @@ struct res {
     char req_name[100];
     int code;
     char name[100];
-    struct tab_addr addrs;
+    struct tab_addrs addrs;
 };
-
-bool is_ignored(char *ip, char *port, struct ignored_servers servers);
 
 void convert(char ip[], int port, struct sockaddr_in6 *dst);
 
-struct tab_addr parse_conf(const char *file_name);
+struct tab_addrs parse_conf(const char *file_name);
 
-struct res parse_res(char *res, size_t len, struct ignored_servers servers);
+struct res parse_res(char *res);
 
-struct server addr_to_string(struct sockaddr_in6 addr);
+void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
