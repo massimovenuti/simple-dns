@@ -19,18 +19,11 @@ void convert(char ip[], int port, struct sockaddr_in6 *dst) {
     }
 }
 
-bool is_ignored(char *ip, char *port, struct ignored_servers servers) {
-    int i;
-    for (i = 0; i < servers.nb_servers && strcmp(ip, servers.servers[i].ip) != 0 && strcmp(port, servers.servers[i].port) != 0; i++)
-        ;
-    return i != servers.nb_servers;
-}
-
-struct tab_addr parse_conf(const char *file_name) {
-    struct tab_addr res;
+struct tab_addrs parse_conf(const char *file_name) {
+    struct tab_addrs res;
     int max_addrs = TABSIZE;
 
-    MCHK(res.addr = malloc(max_addrs * sizeof(struct sockaddr_in6)));
+    MCHK(res.addrs = malloc(max_addrs * sizeof(struct sockaddr_in6)));
 
     FILE *file;
 
@@ -43,9 +36,9 @@ struct tab_addr parse_conf(const char *file_name) {
     for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
         if (i >= max_addrs) {
             max_addrs *= INCREASE_COEF;
-            MCHK(res.addr = realloc(res.addr, max_addrs * sizeof(struct sockaddr_in6)));
+            MCHK(res.addrs = realloc(res.addrs, max_addrs * sizeof(struct sockaddr_in6)));
         }
-        convert(ip, port, &res.addr[i]);
+        convert(ip, port, &res.addrs[i]);
     }
     res.len = i + 1;
 
@@ -53,13 +46,12 @@ struct tab_addr parse_conf(const char *file_name) {
     return res;
 }
 
-struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
-    (void)len;
+struct res parse_res(char *res) {
     struct res s_res;
-    char tab_addr[1024];
-    *tab_addr = '\0';
+    char tab_addrs[1024];
+    *tab_addrs = '\0';
 
-    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name, &s_res.code, tab_addr) < 4) {
+    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name, &s_res.code, tab_addrs) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         exit(EXIT_FAILURE);
     }
@@ -78,13 +70,13 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
     int max_addrs = TABSIZE;
     bool first = true;
 
-    token = strtok(tab_addr, SEPARATOR);
+    token = strtok(tab_addrs, SEPARATOR);
 
     if (token == NULL) {
-        s_res.addrs.addr = NULL;
+        s_res.addrs.addrs = NULL;
         s_res.addrs.len = 0;
     } else {
-        s_res.addrs.addr = malloc(max_addrs * sizeof(struct sockaddr_in6));
+        s_res.addrs.addrs = malloc(max_addrs * sizeof(struct sockaddr_in6));
         do {
             if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
                 fprintf(stderr, "Server result incorrect\n");
@@ -96,12 +88,11 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
             }
             if (nb_addrs > max_addrs) {
                 max_addrs *= INCREASE_COEF;
-                MCHK(s_res.addrs.addr = realloc(s_res.addrs.addr, max_addrs * sizeof(struct sockaddr_in6)));
+                MCHK(s_res.addrs.addrs = realloc(s_res.addrs.addrs, max_addrs * sizeof(struct sockaddr_in6)));
             }
-            if (!is_ignored(ip, port, servers)) {
-                convert(ip, atoi(port), &s_res.addrs.addr[nb_addrs]);
-                nb_addrs++;
-            }
+            //add_addr(s_res.addrs.addrs, convert(ip, atoi(port)));
+            convert(ip, atoi(port), &s_res.addrs.addrs[nb_addrs]);
+            nb_addrs++;
             token = strtok(NULL, SEPARATOR);
         } while (token != NULL);
         s_res.addrs.len = nb_addrs + 1;
@@ -110,13 +101,14 @@ struct res parse_res(char *res, size_t len, struct ignored_servers servers) {
     return s_res;
 }
 
-struct server addr_to_string(struct sockaddr_in6 addr) {
-    struct server res;
-    sprintf(res.port, "%d", ntohs(addr.sin6_port));
+void fprint_addr(FILE *stream, struct sockaddr_in6 addr) {
+    char ip[IPLEN];
+    char port[PORTLEN];
+    sprintf(port, "%d", ntohs(addr.sin6_port));
     if (addr.sin6_family == AF_INET6) {
-        inet_ntop(AF_INET6, &addr.sin6_addr, res.ip, sizeof(addr));
+        inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(addr));
     } else {
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, res.ip, sizeof(addr));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, ip, sizeof(addr));
     }
-    return res;
+    fprintf(stream, "%s:%s\n", ip, port);
 }

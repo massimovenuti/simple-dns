@@ -1,13 +1,86 @@
 #include "main.h"
 
-void ignore(struct sockaddr_in6 addr, struct ignored_servers *servers) {
-    struct server tmp = addr_to_string(addr);
-    MCHK(strcpy(servers->servers[servers->nb_servers].ip, tmp.ip));
-    MCHK(strcpy(servers->servers[servers->nb_servers].port, tmp.port));
-    servers->nb_servers = (servers->nb_servers + 1) % MAX_IGNORED;
+void init_tab_addrs(struct tab_addrs *a) {
+    a->addrs = NULL;
+    a->len = 0;
 }
 
-void send_req(int soc, struct request *request, struct ignored_servers servers, struct ignored_servers *use, bool monitoring) {
+void init_tab_requests(struct tab_requests *r) {
+    for (int i = 0; i < r->len; i++) {
+        r->requests[i].id = -1;
+        r->requests[i].dest_addrs.addrs = NULL;
+        r->requests[i].dest_addrs.len = 0;
+        r->requests[i].index = 0;
+        strcpy(r->requests[i].name, "\0");
+    }
+}
+
+bool rm_request(struct tab_requests *r, int id) {
+    int i;
+    for (i = 0; i < r->len; i++) {
+        if (r->requests[i].id == id) {
+            r->requests[i].id = -1;
+            free(r->requests[i].dest_addrs.addrs);
+            r->requests[i].dest_addrs.len = 0;
+            r->requests[i].index = 0;
+            strcpy(r->requests[i].name, "\0");
+        }
+    }
+    return i == r->len;
+}
+
+bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
+    char ip1[IPLEN];
+    char ip2[IPLEN];
+    if (a1.sin6_family != a2.sin6_family) {
+        return false;
+    }
+    if (a1.sin6_family == AF_INET6) {
+        inet_ntop(AF_INET6, &a1.sin6_addr, ip1, sizeof(a1));
+        inet_ntop(AF_INET6, &a2.sin6_addr, ip1, sizeof(a2));
+    } else {
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1, sizeof(a1));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip1, sizeof(a2));
+    }
+    return (ntohs(a1.sin6_port) == ntohs(a2.sin6_port)) && !strcmp(ip1, ip2);
+}
+
+void add_addr(struct sockaddr_in6 addr, struct tab_addrs *addrs) {
+    if (addrs->addrs == NULL) {
+        addrs->addrs = malloc(TABSIZE * sizeof(addr));
+    }
+    size_t size = addrs->len * sizeof(addr);
+    if (size >= sizeof(addrs->addrs)) {
+        addrs->addrs = realloc(addrs->addrs, size * INCREASE_COEF);
+    }
+    addrs->addrs[addrs->len] = addr;
+    addrs->len++;
+}
+
+void rm_addr(struct sockaddr_in6 addr, struct tab_addrs *addrs) {
+    int i;
+    for (i = 0; i < addrs->len && !addr_cmp(addr, addrs->addrs[i]); i++)
+        ;
+    if (i != addrs->len) {}
+}
+
+void ignore(struct sockaddr_in6 addr, struct tab_addrs *ignored) {
+    if (ignored->len < MAX_IGNORED) {
+        add_addr(addr, ignored);
+    } else {
+        ignored->addrs[ignored->len % MAX_IGNORED] = addr;
+        ignored->len++;
+    }
+}
+
+bool is_ignored(struct sockaddr_in6 addr, struct tab_addrs ignored) {
+    int i;
+    for (i = 0; i < ignored.len && !addr_cmp(ignored.addrs[i], addr); i++)
+        ;
+    return i != ignored.len;
+}
+
+void send_req(int soc, struct request *request, struct tab_addrs ignored, struct tab_addrs *used, bool monitoring) {
     char req[REQLEN];
 
     struct timeval t;
@@ -21,17 +94,17 @@ void send_req(int soc, struct request *request, struct ignored_servers servers, 
         fprintf(stderr, "req: %s\n", req);
 
     bool send = false;
-    for (size_t i = request->index_addr; i < request->tab_dst.len && send; i++) {
-        if (!is_ignored() && minimal_use()) {
-            PCHK(sendto(soc, req, len_req + 1, 0, (struct sockaddr *)&request->tab_dst.addr[i], (socklen_t)sizeof(struct sockaddr_in6)));
-            request->index_addr = i;
-            add_use(request->tab_dst.addr[i], use);
+    for (size_t i = request->index; i < request->dest_addrs.len && send; i++) {
+        if (!is_ignored(request->dest_addrs.addrs[i], ignored)) {  //&& minimal_use()) {
+            PCHK(sendto(soc, req, len_req + 1, 0, (struct sockaddr *)&request->dest_addrs.addrs[i], (socklen_t)sizeof(struct sockaddr_in6)));
+            request->index = i;
+            add_use(request->dest_addrs.addrs[i], used);
             send = true;
         }
     }
 }
 
-struct res receive_res(int soc, struct ignored_servers servers, struct ignored_servers *use, bool monitoring) {
+struct res receive_res(int soc, struct tab_addrs ignored, struct tab_addrs *used, bool monitoring) {
     char res[REQLEN];
 
     struct sockaddr_in6 src_addr;
@@ -39,8 +112,8 @@ struct res receive_res(int soc, struct ignored_servers servers, struct ignored_s
     ssize_t len_res;
 
     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
-    rm_use(src_addr, use);
-    struct res struc_res = parse_res(res, len_res, servers);
+    rm_use(src_addr, used);
+    struct res struc_res = parse_res(res);
 
     if (monitoring) {
         fprintf(stderr, "res: %s\n", res);
@@ -50,7 +123,7 @@ struct res receive_res(int soc, struct ignored_servers servers, struct ignored_s
     return struc_res;
 }
 
-void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request, struct tab_addr root_addr, struct ignored_servers servers, struct ignored_servers *use, bool *goon, bool *monitoring) {
+void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request, struct tab_addrs root_addr, struct tab_addrs ignored, struct tab_addrs *used, bool *goon, bool *monitoring) {
     char input[NAMELEN];
     if (fscanf(stream, "%s", input) == EOF) {
         if (ferror(stream)) {
@@ -61,7 +134,7 @@ void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request
         if (*input != '!') {
             struct request req = {*id, input, root_addr, 0};
             *id += 1;
-            send_req(soc, &req, servers, use, monitoring);
+            send_req(soc, &req, ignored, used, monitoring);
             add_request(tab_request, req);
         } else {
             if (!strcmp(input, "!stop")) {
@@ -75,8 +148,8 @@ void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request
                 }
             } else if (!strcmp(input, "!ignored")) {
                 fprintf(stderr, "ignored server:\n");
-                for (int i = 0; i < servers.nb_servers; i++) {
-                    fprintf(stderr, "%s:%s\n", servers.servers[0].ip, servers.servers[0].port);
+                for (int i = 0; i < ignored.len; i++) {
+                    fprint_addr(stderr, ignored.addrs[i]);
                 }
                 fprintf(stderr, "\n");
             }
@@ -84,23 +157,23 @@ void read_input(FILE *stream, int soc, int *id, struct tab_requests *tab_request
     }
 }
 
-void read_network(int soc, int *id, struct tab_requests *tab_request, struct tab_addr root_addr, struct ignored_servers servers, struct ignored_servers *use, bool *monitoring) {
-    struct res res = receive_res(soc, servers, use, monitoring);
+void read_network(int soc, int *id, struct tab_requests *tab_request, struct tab_addrs root_addr, struct tab_addrs ignored, struct tab_addrs *used, bool *monitoring) {
+    struct res res = receive_res(soc, ignored, used, monitoring);
     struct request *active_request = rech_req(tab_request, res.id);
     if (active_request == NULL) {
         return;
     }
-    free(active_request->tab_dst.addr);
-    active_request->tab_dst = res.addrs;
+    free(active_request->dest_addrs.addrs);
+    active_request->dest_addrs = res.addrs;
 
     if (res.code > 0) {
         if (!strcmp(res.req_name, res.name)) {
             //print atbb addr
             rm_request(tab_request, res.id);
         } else {
-            active_request->id = id;
-            active_request->index_addr = 0;
-            send_req(soc, active_request, servers, use, monitoring);
+            active_request->id = *id;
+            active_request->index = 0;
+            send_req(soc, active_request, ignored, used, monitoring);
             *id += 1;
         }
     } else {
@@ -115,28 +188,34 @@ int main(int argc, char const *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    struct tab_addr root_addr;
-    struct ignored_servers ignored_serv;
-    struct tab_requests requests;
-    ignored_serv.nb_servers = 0;
-
-    root_addr = parse_conf(argv[1]);
+    FILE *req_file;
 
     int soc;
-    PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
 
+    struct tab_addrs root_addr, ignored, used;
+    struct tab_requests requests;
+
+    bool monitoring = false;
+    bool goon = true;
     bool interactif = true;
-    FILE *req_file;
-    if (argc == 3) {
-        interactif = false;
-        MCHK(req_file = fopen(argv[2], "r"));
-    }
 
     int id = 0;
     fd_set ensemble;
     struct timeval timeout_loop = {1, 0};
-    bool monitoring = false;
-    bool goon = true;
+
+    init_tab_addrs(&root_addr);
+    init_tab_addrs(&ignored);
+    init_tab_addrs(&used);
+    init_tab_requests(&requests);
+
+    root_addr = parse_conf(argv[1]);
+
+    PCHK(soc = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP));
+
+    if (argc == 3) {
+        interactif = false;
+        MCHK(req_file = fopen(argv[2], "r"));
+    }
 
     while (goon && interactif) {
         FD_ZERO(&ensemble);
@@ -145,9 +224,9 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &requests, root_addr, ignored_serv, &use, &goon, &monitoring);
+            read_input(stdin, soc, &id, &requests, root_addr, ignored, &used, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, &requests, root_addr, ignored_serv, &use, monitoring);
+            read_network(soc, &id, &requests, root_addr, ignored, &used, &monitoring);
         } else {
         }
     }
@@ -159,9 +238,9 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &requests, root_addr, ignored_serv, &use, &goon, &monitoring);
+            read_input(stdin, soc, &id, &requests, root_addr, ignored, &used, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, &requests, root_addr, ignored_serv, &use, monitoring);
+            read_network(soc, &id, &requests, root_addr, ignored, &used, &monitoring);
         } else {
         }
     }
@@ -170,6 +249,8 @@ int main(int argc, char const *argv[]) {
         fclose(req_file);
     }
 
-    free(root_addr.addr);
+    free(root_addr.addrs);
+    free(ignored.addrs);
+    free(used.addrs);
     exit(EXIT_SUCCESS);
 }
