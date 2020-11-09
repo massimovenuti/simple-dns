@@ -67,9 +67,9 @@ struct name *parse_conf(const char *file_name) {
     char ip[IPLEN];
     char port[PORTLEN];
 
-    int i, tmp;
+    int i, tmp, code;
     bool found;
-    for (i = 0; fscanf(file, "%[^|- ] | %[^|- ] | %s\n", name, ip, port) != EOF; i++) {
+    for (i = 0; (code = fscanf(file, "%[^|- ] | %140[^|- ] | %10s\n", name, ip, port)) == 3 && code != EOF; i++) {
         found = false;
         if (i >= max_names) {
             max_names *= INCREASE_COEF;
@@ -99,6 +99,11 @@ struct name *parse_conf(const char *file_name) {
             res[i].nb_servers = 1;
         }
     }
+    if (code != EOF) {
+        fprintf(stderr, "Bad conf\n");
+        exit(EXIT_FAILURE);
+    }
+
     PCHK(fclose(file));
     return res;
 }
@@ -163,7 +168,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
         exit(EXIT_FAILURE);
     }
 
-    *len_dest = len_src + 4;
+    *len_dest = len_src + 2;
     increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
     MCHK(strcat(strcpy(dest, src), SEPARATOR));
 
@@ -188,7 +193,7 @@ bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_
 
     MCHK(strcat(dest, "\0"));
     if (!found) {
-        *len_dest += 1;
+        *len_dest += 2;
         MCHK(strcat(dest, FAIL));
         MCHK(strcat(dest, SEPARATOR));
         return false;
