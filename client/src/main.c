@@ -72,7 +72,6 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
     } else {
         if (*input != '!') {
             struct req req = new_req(reqs, *id, input, root_addr);
-            *reqs = lreq_add(*reqs, req);
             *id += 1;
             send_req(soc, &req, ignored, *monitoring);
         } else {
