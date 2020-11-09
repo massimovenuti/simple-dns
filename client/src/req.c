@@ -40,9 +40,13 @@ lreq lreq_add(lreq l, struct req x) {
     new->req = x;
     new->next = lreq_new();
     lreq tmp;
-    for (tmp = l; !lreq_empty(tmp->next); tmp = tmp->next);
-    tmp->next = new;
-    return l;
+    if (!lreq_empty(l)) {
+        for (tmp = l; !lreq_empty(tmp->next); tmp = tmp->next);
+        tmp->next = new;
+        return l;
+    } else {
+        return new;
+    }
 }
 
 lreq lreq_rm(lreq l, int id) {

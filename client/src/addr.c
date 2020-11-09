@@ -54,9 +54,13 @@ laddr laddr_add(laddr l, struct sockaddr_in6 x) {
     new->addr = x;
     new->next = laddr_new();
     laddr tmp;
-    for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next);
-    tmp->next = new;
-    return l;
+    if (!laddr_empty(l)) {
+        for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next);
+        tmp->next = new;
+        return l;
+    } else {
+        return new;
+    }
 }
 
 laddr laddr_rm(laddr l, struct sockaddr_in6 x) {
