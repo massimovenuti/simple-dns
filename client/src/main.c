@@ -4,15 +4,15 @@ bool is_ignored(laddr l, struct sockaddr_in6 addr) {
     return !laddr_empty(laddr_search(l, addr));
 }
 
-bool timeout(struct timeval t) {
+bool timeout(struct req r) {
     struct timeval cur_t;
     PCHK(gettimeofday(&cur_t, NULL));
-    return timercmp(&t, &cur_t, >=);
+    return timercmp(&r.t, &cur_t, >=);
 }
 
 void check_timeout(int soc, lreq lr, laddr suspicious, laddr ignored, bool monitoring) {
     for (lreq tmp = lr; !lreq_empty(tmp); tmp = tmp->next) {
-        if (timeout(tmp->req.t)) {
+        if (timeout(tmp->req)) {
             struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[lr->req.index];
             if (laddr_empty(laddr_search(suspicious, *addr))) {
                 suspicious = laddr_add(suspicious, *addr);
