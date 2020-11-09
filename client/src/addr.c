@@ -52,7 +52,7 @@ laddr laddr_add(laddr l, struct sockaddr_in6 x) {
     laddr new;
     MCHK(new = malloc(sizeof(struct s_laddr)));
     new->addr = x;
-    new->next = lreq_new();
+    new->next = laddr_new();
     laddr tmp;
     for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next);
     tmp->next = new;
