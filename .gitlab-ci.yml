@@ -45,7 +45,7 @@ test-client:
 test-serveur:
   stage: test
   before_script:
-    - apt update && apt -y install netcat
+    - apt update && apt -y install netcat valgrind
   script:
     - cd serveur
     - ./test/testSimple.sh
