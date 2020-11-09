@@ -49,11 +49,14 @@ void laddr_destroy(laddr l) {
 }
 
 laddr laddr_add(laddr l, struct sockaddr_in6 x) {
-    laddr new_head;
-    MCHK(new_head = malloc(sizeof(struct s_laddr)));
-    new_head->addr = x;
-    new_head->next = l;
-    return new_head;
+    laddr new;
+    MCHK(new = malloc(sizeof(struct s_laddr)));
+    new->addr = x;
+    new->next = lreq_new();
+    laddr tmp;
+    for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next);
+    tmp->next = new;
+    return l;
 }
 
 laddr laddr_rm(laddr l, struct sockaddr_in6 x) {

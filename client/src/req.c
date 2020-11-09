@@ -39,11 +39,14 @@ void lreq_destroy(lreq l) {
 }
 
 lreq lreq_add(lreq l, struct req x) {
-    lreq new_head;
-    MCHK(new_head = malloc(sizeof(struct s_lreq)));
-    new_head->req = x;
-    new_head->next = l;
-    return new_head;
+    lreq new;
+    MCHK(new = malloc(sizeof(struct s_lreq)));
+    new->req = x;
+    new->next = lreq_new();
+    lreq tmp;
+    for (tmp = l; !lreq_empty(tmp->next); tmp = tmp->next);
+    tmp->next = new;
+    return l;
 }
 
 lreq lreq_rm(lreq l, int id) {
