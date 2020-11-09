@@ -149,6 +149,7 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &used, monitoring);
         } else {
