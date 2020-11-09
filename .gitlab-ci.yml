@@ -46,7 +46,7 @@ test-serveur:
   stage: test
   script:
     - cd serveur
-    - ./test/check.sh
+    - ./test/testSimple.sh
   needs: ["build-serveur"]
   only:
     changes:
