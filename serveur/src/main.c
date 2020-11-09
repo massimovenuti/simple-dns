@@ -7,7 +7,7 @@
  * @return void* 
  */
 void* processes_request(void* arg) {
-    struct thread_arg info = *(struct thread_arg*)arg;
+    struct thread_arg *info = (struct thread_arg*)arg;
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
     size_t alloc_mem = RESLEN * sizeof(char);
@@ -16,9 +16,10 @@ void* processes_request(void* arg) {
     ssize_t len_req;
     size_t len_res;
 
-    PCHK((len_req = recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
-    if (make_res(res, req, info.tab_of_addr, &len_res, len_req, &alloc_mem)) {
-        PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
+    PCHK((len_req = recvfrom(info->soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    BCHK(pthread_barrier_wait(&info->barr));
+    if (make_res(res, req, info->tab_of_addr, &len_res, len_req, &alloc_mem)) {
+        PCHK(sendto(info->soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
     }
     free(res);
 
@@ -48,7 +49,11 @@ int main(int argc, char const* argv[]) {
     pthread_t tid;
 
     struct name* tab = parse_conf(argv[2]);
-    struct thread_arg arg = {soc, tab};
+    struct thread_arg arg;
+    arg.soc = soc;
+    arg.tab_of_addr = tab;
+
+    TCHK(pthread_barrier_init(&arg.barr, NULL, 2));
 
     fd_set ensemble;
     bool goon = true;
@@ -63,6 +68,7 @@ int main(int argc, char const* argv[]) {
 
         if (FD_ISSET(soc, &ensemble)) {
             TCHK(pthread_create(&tid, &thread_attr, processes_request, &arg));
+            BCHK(pthread_barrier_wait(&arg.barr));
         }
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
             scanf("%s", str);
@@ -70,10 +76,11 @@ int main(int argc, char const* argv[]) {
                 TCHK(pthread_attr_destroy(&thread_attr));
                 PCHK(close(soc));
                 free_names(tab);
-                return EXIT_SUCCESS;
+                TCHK(pthread_barrier_destroy(&arg.barr));
+                pthread_exit(NULL);
             }
         }
     }
 
-    return EXIT_SUCCESS;
+    pthread_exit(NULL);
 }

@@ -6,6 +6,11 @@
         {perror(#exp); exit(1);} \
     } while(0)
 
+#define BCHK(exp) do { \
+    if ((errno = (exp)) > 0) \
+        {if (errno != PTHREAD_BARRIER_SERIAL_THREAD){perror(#exp); exit(1);}} \
+    } while(0)
+
 #define MCHK(exp) do { \
     if ((exp) == NULL) \
         {perror(#exp); exit(1);} \

@@ -25,6 +25,7 @@
 struct thread_arg {
     int soc;
     struct name *tab_of_addr;
+    pthread_barrier_t barr;
 };
 
 #endif
