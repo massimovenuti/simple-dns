@@ -11,15 +11,15 @@ void* processes_request(void* arg) {
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
     size_t alloc_mem = RESLEN * sizeof(char);
-    char *res = malloc(alloc_mem);
+    char* res = malloc(alloc_mem);
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
     size_t len_res;
 
     PCHK((len_req = recvfrom(info.soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
-    make_res(res, req, info.tab_of_addr, &len_res, len_req, &alloc_mem);
-    PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
-
+    if (make_res(res, req, info.tab_of_addr, &len_res, len_req, &alloc_mem)) {
+        PCHK(sendto(info.soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
+    }
     free(res);
 
     return NULL;
