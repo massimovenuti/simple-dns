@@ -10,6 +10,12 @@ struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
     return req;
 }
 
+void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs) {
+    req->id = id;
+    req->dest_addrs = addrs;
+    req->index = get_index(*l, *req);
+}
+
 int get_index(lreq l, struct req req) {
     int index = 0;
     lreq tmp;

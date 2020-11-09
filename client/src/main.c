@@ -4,7 +4,29 @@ bool is_ignored(laddr l, struct sockaddr_in6 addr) {
     return !laddr_empty(laddr_search(l, addr));
 }
 
-void send_req(int soc, struct req *req, laddr ignored, laddr *used, bool monitoring) {
+bool timeout(struct timeval t) {
+    struct timeval cur_t;
+    PCHK(gettimeofday(&cur_t, NULL));
+    return timercmp(&t, &cur_t, >=);
+}
+
+void check_timeout(int soc, lreq lr, laddr suspicious, laddr ignored, bool monitoring) {
+    for (lreq tmp = lr; !lreq_empty(tmp); tmp = tmp->next) {
+        if (timeout(tmp->req.t)) {
+            struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[lr->req.index];
+            if (laddr_empty(laddr_search(suspicious, *addr))) {
+                suspicious = laddr_add(suspicious, *addr);
+                send_req(soc, &tmp->req, ignored, monitoring);
+            } else {
+                ignored = laddr_add(ignored, *addr);
+                suspicious = laddr_rm(suspicious, *addr);
+                tmp->req.index = get_index(lr, tmp->req);
+            }
+        }
+    }
+}
+
+void send_req(int soc, struct req *req, laddr ignored, bool monitoring) {
     char req_char[REQLEN];
 
     struct timeval t;
@@ -23,14 +45,13 @@ void send_req(int soc, struct req *req, laddr ignored, laddr *used, bool monitor
         if (!is_ignored(ignored, req->dest_addrs.addrs[i])) {  //&& minimal_use()) {
             PCHK(sendto(soc, req_char, len_req + 1, 0, (struct sockaddr *)&req->dest_addrs.addrs[i], (socklen_t)sizeof(struct sockaddr_in6)));
             req->index = i;
-            *used = laddr_add(*used, req->dest_addrs.addrs[i]);
             send = true;
         }
         i = (i + 1) % req->dest_addrs.len;
     }
 }
 
-struct res receive_res(int soc, laddr ignored, laddr *used, bool monitoring) {
+struct res receive_res(int soc, laddr ignored, bool monitoring) {
     char res[REQLEN];
     (void)ignored;
 
@@ -39,7 +60,6 @@ struct res receive_res(int soc, laddr ignored, laddr *used, bool monitoring) {
     ssize_t len_res;
 
     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
-    *used = laddr_rm(*used, src_addr);
     struct res struc_res = parse_res(res);
 
     if (monitoring) {
@@ -50,8 +70,7 @@ struct res receive_res(int soc, laddr ignored, laddr *used, bool monitoring) {
     return struc_res;
 }
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr *used, bool *goon, bool *monitoring) {
-    (void)goon;
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, bool *goon, bool *monitoring) {
     char input[NAMELEN];
     if (fscanf(stream, "%s", input) == EOF) {
         if (ferror(stream)) {
@@ -62,7 +81,7 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
         if (*input != '!') {
             struct req req = new_req(reqs, *id, input, root_addr);
             *id += 1;
-            send_req(soc, &req, ignored, used, *monitoring);
+            send_req(soc, &req, ignored, *monitoring);
         } else {
             if (!strcmp(input, "!stop")) {
                 *goon = false;
@@ -81,8 +100,8 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
     }
 }
 
-void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *used, bool monitoring) {
-    struct res res = receive_res(soc, ignored, used, monitoring);
+void read_network(int soc, int *id, lreq *reqs, laddr ignored, bool monitoring) {
+    struct res res = receive_res(soc, ignored, monitoring);
     lreq active_req = lreq_search(*reqs, res.id);
     if (lreq_empty(active_req)) {
         return;
@@ -100,7 +119,7 @@ void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *used, bool
         } else {
             active_req->req.id = *id;
             active_req->req.index = 0;
-            send_req(soc, &active_req->req, ignored, used, monitoring);
+            send_req(soc, &active_req->req, ignored, monitoring);
             *id += 1;
         }
     } else {
@@ -122,7 +141,7 @@ int main(int argc, char const *argv[]) {
     int soc;
 
     struct tab_addrs root_addr;
-    laddr ignored = laddr_new(), used = laddr_new();
+    laddr ignored = laddr_new(), suspicious = laddr_new();
     lreq reqs = lreq_new();
 
     bool monitoring = false;
@@ -149,16 +168,16 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, &reqs, ignored, &used, monitoring);
+            read_network(soc, &id, &reqs, ignored, monitoring);
         } else {
         }
     }
 
     while (goon && !interactif) {
         while (!feof(req_file)) {
-            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
+            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &goon, &monitoring);
         }
 
         FD_ZERO(&ensemble);
@@ -167,9 +186,9 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &used, &goon, &monitoring);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &goon, &monitoring);
         } else if (FD_ISSET(soc, &ensemble)) {
-            read_network(soc, &id, &reqs, ignored, &used, monitoring);
+            read_network(soc, &id, &reqs, ignored, monitoring);
         } else {
         }
     }
@@ -179,7 +198,7 @@ int main(int argc, char const *argv[]) {
     }
 
     laddr_destroy(ignored);
-    laddr_destroy(used);
+    laddr_destroy(suspicious);
     lreq_destroy(reqs);
     exit(EXIT_SUCCESS);
 }
