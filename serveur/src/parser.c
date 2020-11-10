@@ -156,7 +156,7 @@ bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, s
         MCHK(strcat(dest, SUCCESS));
         for (int j = 0; j < n.names[ind].tab_servs.len; j++) {
             *new_len_dest += 3 + strlen(n.names[ind].name) + strlen(n.names[ind].tab_servs.servs[j].ip) + strlen(n.names[ind].tab_servs.servs[j].port);
-            dest = incstr(dest, *max_len_dest, max_len_dest, INCREASE_COEF);
+            dest = incstr(dest, *new_len_dest, max_len_dest, INCREASE_COEF);
             MCHK(strcat(dest, SEPARATOR));
             MCHK(strcat(dest, n.names[ind].name));
             MCHK(strcat(dest, SUBSEPARATOR));
@@ -169,7 +169,7 @@ bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, s
         MCHK(strcat(dest, FAIL));
         MCHK(strcat(dest, SEPARATOR));
     }
-    
+
     MCHK(strcat(dest, "\0"));
 
     return true;
