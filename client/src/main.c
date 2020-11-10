@@ -50,7 +50,7 @@ void send_req(int soc, struct req *req, laddr ignored, bool monitoring) {
     }
 }
 
-struct res receive_res(int soc, bool monitoring) {
+struct res receive_res(int soc, laddr monitored, bool monitoring) {
     char res[REQLEN];
     struct sockaddr_in6 src_addr;
     socklen_t len_addr = sizeof(struct sockaddr_in6);
@@ -58,6 +58,14 @@ struct res receive_res(int soc, bool monitoring) {
     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
     struct res struc_res = parse_res(res);
     if (monitoring) {
+        laddr tmp = laddr_search(monitored, src_addr);
+        if (!laddr_empty(tmp)) {
+            new_use(&tmp->m_addr);
+        } else {
+            struct monitored_addr maddr = new_maddr(src_addr);
+            new_use(&maddr);
+            monitored = laddr_add(monitored, maddr);
+        }
         fprintf(stderr, "res: %s\n", res);
         fprintf(stderr, "in: %lds %ldms\n\n", struc_res.time.tv_sec, struc_res.time.tv_usec / 1000);
     }

@@ -21,8 +21,15 @@ struct tab_addrs {
     int len;
 };
 
-typedef struct s_laddr {
+struct monitored_addr {
     struct sockaddr_in6 addr;
+    int counter;
+    struct timeval avg_time;
+    struct timeval total_time;
+};
+
+typedef struct s_laddr {
+    struct monitored_addr m_addr;
     struct s_laddr *next;
 } * laddr;
 

@@ -48,10 +48,30 @@ void laddr_destroy(laddr l) {
     laddr_destroy(n);
 }
 
-laddr laddr_add(laddr l, struct sockaddr_in6 x) {
+struct timeval new_timeval() {
+    struct timeval t;
+    t.tv_sec = 0;
+    t.tv_usec = 0;
+    return t;
+}
+
+void new_use() {
+    return;
+}
+
+struct monitored_addr new_maddr(struct sockaddr_in6 a) {
+    struct monitored_addr m_addr;
+    m_addr.addr = a;
+    m_addr.counter = 0;
+    m_addr.avg_time = new_timeval();
+    m_addr.total_time = new_timeval();
+    return m_addr;
+}
+
+laddr laddr_add(laddr l, struct monitored_addr x) {
     laddr new;
     MCHK(new = malloc(sizeof(struct s_laddr)));
-    new->addr = x;
+    new->m_addr = x;
     new->next = laddr_new();
     laddr tmp;
     if (!laddr_empty(l)) {
@@ -67,7 +87,7 @@ laddr laddr_rm(laddr l, struct sockaddr_in6 x) {
     if (laddr_empty(l)) {
         return laddr_new();
     }
-    if (addr_cmp(l->addr, x)) {
+    if (addr_cmp(l->m_addr.addr, x)) {
         laddr n = l->next;
         free(l);
         return n;
@@ -80,7 +100,7 @@ struct sockaddr_in6 laddr_elem(laddr l, int i) {
         exit(EXIT_FAILURE);
     }
     if (i == 0) {
-        return l->addr;
+        return l->m_addr.addr;
     }
     return laddr_elem(l->next, i - 1);
 }
@@ -96,7 +116,7 @@ laddr laddr_search(laddr l, struct sockaddr_in6 x) {
     if (laddr_empty(l)) {
         return laddr_new();
     }
-    if (addr_cmp(l->addr, x)) {
+    if (addr_cmp(l->m_addr.addr, x)) {
         return l;
     }
     return laddr_search(l->next, x);
@@ -107,6 +127,6 @@ bool laddr_empty(laddr l) { return l == NULL; }
 void laddr_fprint(FILE *stream, laddr l) {
     if (laddr_empty(l))
         return;
-    fprint_addr(stream, l->addr);
+    fprint_addr(stream, l->m_addr.addr);
     laddr_fprint(stream, l->next);
 }

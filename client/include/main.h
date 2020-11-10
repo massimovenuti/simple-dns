@@ -20,6 +20,11 @@
 #define REQLEN 512
 #define TIMEOUT 5
 
+struct client {
+    bool goon;
+    bool monitored;
+};
+
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
 void send_req(int soc, struct req *req, laddr ignored, bool monitoring);
