@@ -1,40 +1,102 @@
 #include "parser.h"
 
-/**
- * @brief 
- * 
- * @param names 
- * @param start 
- * @param end 
- */
-void init_names(struct name *names, int start, int end) {
-    for (int i = start; i < end; i++) {
-        names[i].nb_servers = 0;
-        names[i].max_servers = TABSIZE;
-        names[i].servers = NULL;
-    }
+struct tab_servers new_tab_servers() {
+    struct tab_servers ts;
+    ts.servs = NULL;
+    ts.len = 0;
+    ts.max_len = 0;
+    return ts;
 }
 
-/**
- * @brief 
- * 
- * @param names 
- */
-void free_names(struct name *names) {
-    for (int i = 0; names[i].servers != NULL; i++) {
-        free(names[i].servers);
-    }
-    free(names);
+struct tab_names new_tab_names() {
+    struct tab_names tn;
+    tn.names = NULL;
+    tn.len = 0;
+    tn.max_len = 0;
+    return tn;
 }
 
-/**
- * @brief 
- * 
- * @param s1 
- * @param s2 
- * @return true 
- * @return false 
- */
+struct server new_server() {
+    struct server res;
+    *res.ip = '\0';
+    *res.port = '\0';
+    return res;
+}
+
+struct name new_name() {
+    struct name n;
+    *n.name = '\0';
+    n.tab_servs = new_tab_servers();
+    return n;
+}
+
+void free_tab_servers(struct tab_servers *s) {
+    free(s->servs);
+}
+
+void free_tab_names(struct tab_names *n) {
+    for (int i = 0; i < n->len; i++) {
+        free_tab_servers(&n->names[i].tab_servs);
+    }
+    free(n->names);
+}
+
+void add_name(struct tab_names *n, char *name, struct tab_servers tab_servs) {
+    if (n == NULL) {
+        return;
+    }
+    n->names = inctab(n->names, n->len + 1, &n->max_len, sizeof(struct name), INCREASE_COEF);
+    strcpy(n->names[n->len].name, name);
+    n->names[n->len].tab_servs = tab_servs;
+    n->names[n->len + 1] = new_name();
+    n->len++;
+}
+
+void add_server(struct tab_servers *s, char *ip, char *port) {
+    if (s == NULL) {
+        return;
+    }
+    s->servs = inctab(s->servs, s->len + 1, &s->max_len, sizeof(struct server), INCREASE_COEF);
+    MCHK(strcpy(s->servs[s->len].ip, ip));
+    MCHK(strcpy(s->servs[s->len].port, port));
+    s->servs[s->len + 1] = new_server();
+    s->len++;
+}
+
+int search_name(struct tab_names n, char *name) {
+    for (int tmp = 0; tmp < n.len; tmp++) {
+        if (compare(name, n.names[tmp].name)) {
+            return tmp;
+        }
+    }
+    return -1;
+}
+
+// augmente la taille d'un tableau quelconque en fonction de len
+void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef) {
+    if (len >= *max_len) {
+        if (*max_len == 0) {
+            *max_len = TABSIZE + len;
+        } else {
+            *max_len *= coef;
+        }
+        MCHK(dest = realloc(dest, *max_len * size_elem * coef));
+    }
+    return dest;
+}
+
+char *incstr(char *dest, size_t len, size_t *max_len, int coef) {
+    if (len >= *max_len) {
+        if (*max_len == 0) {
+            *max_len = (TABSIZE * sizeof(char)) + len;
+        } else {
+            *max_len *= coef;
+        }
+        MCHK(dest = realloc(dest, *max_len * coef));
+    }
+    return dest;
+}
+
 bool compare(char *s1, char *s2) {
     char *tmp = strstr(s1, s2);
     if (tmp == NULL)
@@ -42,161 +104,73 @@ bool compare(char *s1, char *s2) {
     return tmp[0] == '.' || s1[strlen(s1) - strlen(tmp) - 1] == '.' || !strcmp(s1, s2);
 }
 
-/**
- * @brief Parse un fichier de configuration
- * 
- * Récupère la liste des noms et des adresses contenues dans un fichier de 
- * configuration.
- * 
- * @param file_name Fichier de configuration
- * @return struct name* 
- */
-struct name *parse_conf(const char *file_name) {
-    struct name *res;
-    int max_names = TABSIZE;
-
-    MCHK(res = malloc(max_names * sizeof(struct name)));
-
-    init_names(res, 0, max_names);
-
+struct tab_names parse_conf(const char *file_name) {
+    struct tab_names n = new_tab_names();
     FILE *file;
-
     MCHK(file = fopen(file_name, "r"));
 
     char name[NAMELEN];
     char ip[IPLEN];
     char port[PORTLEN];
-
-    int i, tmp, code;
-    bool found;
-    for (i = 0; (code = fscanf(file, "%[^|- ] | %140[^|- ] | %10s\n", name, ip, port)) == 3 && code != EOF; i++) {
-        found = false;
-        if (i >= max_names) {
-            max_names *= INCREASE_COEF;
-            MCHK(res = realloc(res, max_names * sizeof(struct name)));
-            init_names(res, i, max_names);
-        }
-        for (tmp = 0; tmp < i; tmp++) {
-            found = !strcmp(res[tmp].name, name);
-            if (found) {
-                if (res[tmp].nb_servers >= res[tmp].max_servers) {
-                    res[tmp].max_servers *= INCREASE_COEF;
-                    MCHK(res[tmp].servers = realloc(res[tmp].servers, res[tmp].max_servers * sizeof(struct server)));
-                }
-                MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].ip, ip));
-                MCHK(strcpy(res[tmp].servers[res[tmp].nb_servers].port, port));
-                res[tmp].nb_servers++;
-            }
-        }
-
-        if (found) {
-            i--;
+    int code;
+    while ((code = fscanf(file, "%[^|- ] | %140[^|- ] | %10s\n", name, ip, port)) == 3 && code != EOF) {
+        int index = search_name(n, name);
+        if (index >= 0) {
+            add_server(&n.names[index].tab_servs, ip, port);
         } else {
-            MCHK(strcpy(res[i].name, name));
-            MCHK(res[i].servers = malloc(res[i].max_servers * sizeof(struct server)));
-            MCHK(strcpy(res[i].servers[0].ip, ip));
-            MCHK(strcpy(res[i].servers[0].port, port));
-            res[i].nb_servers = 1;
+            struct tab_servers new_ts = new_tab_servers();
+            add_server(&new_ts, ip, port);
+            add_name(&n, name, new_ts);
         }
     }
+
     if (code != EOF) {
         fprintf(stderr, "Bad conf\n");
         exit(EXIT_FAILURE);
     }
-
     PCHK(fclose(file));
-    return res;
+    return n;
 }
 
-/**
- * @brief Parse une requête
- * 
- * Extrait le la partie "nom" d'une requête.
- * 
- * @param dest Chaîne qui va contenir le résultat - doit être allouée
- * @param src Chaîne représentant la requête à parser
- * @return true Si succès
- * @return false Sinon
- */
 bool parse_req(char *dest, char *src) {
-    if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) {
+    if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) { /* /!\ longueur des chaînes */
         return true;
     }
     return false;
 }
 
-/**
- * @brief Augmente la taille mémoire d'une chaîne si elle est trop petite
- * 
- * Augmente la taille mémoire d'une chaîne de caractères avec une taille 
- * souhaitée. Si la taille souhaitée est plus petite que la taille actuelle de
- * la chaîne, rien n'est modifié.
- * 
- * @param dest Chaîne de caractères à tester
- * @param size_dest Taille actuelle de la chaîne de caractères
- * @param size_src Nouvelle taille souhaitée
- * @return true Si la taille mémoire de dest a été augmentée
- * @return false Sinon
- */
-bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
-    int x = false;
-    if (*size_dest < size_src) {
-        *size_dest *= INCREASE_COEF;
-        MCHK(dest = realloc(dest, *size_dest));
-        x = true;
-    }
-    return x;
-}
-
-/**
- * @brief 
- * 
- * @param dest 
- * @param src 
- * @param names 
- * @param len_dest 
- * @param len_src 
- * @param max_len_dest 
- * @return true 
- * @return false 
- */
-bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
+bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, size_t len_src, size_t *max_len_dest) {
     char name[NAMELEN];
 
     if (!parse_req(name, src)) {
         fprintf(stderr, "Request incorrect\n");
         return false;
-    } else {
-        *len_dest = len_src + 2;
-        increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-        MCHK(strcat(strcpy(dest, src), SEPARATOR));
-
-        int i, j;
-        bool found = false;
-        for (i = 0; names[i].nb_servers != 0; i++) {
-            if (compare(name, names[i].name)) {
-                found = true;
-                MCHK(strcat(dest, SUCCESS));
-                for (j = 0; j < names[i].nb_servers; j++) {
-                    *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
-                    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-                    MCHK(strcat(dest, SEPARATOR));
-                    MCHK(strcat(dest, names[i].name));
-                    MCHK(strcat(dest, SUBSEPARATOR));
-                    MCHK(strcat(dest, names[i].servers[j].ip));
-                    MCHK(strcat(dest, SUBSEPARATOR));
-                    MCHK(strcat(dest, names[i].servers[j].port));
-                }
-            }
-        }
-
-        MCHK(strcat(dest, "\0"));
-        if (!found) {
-            *len_dest += 2;
-            MCHK(strcat(dest, FAIL));
-            MCHK(strcat(dest, SEPARATOR));
-        }
-
-        return true;
     }
+
+    *new_len_dest = len_src + 2; /* /!\ */
+    dest = incstr(dest, *new_len_dest, max_len_dest, INCREASE_COEF);
+    MCHK(strcat(strcpy(dest, src), SEPARATOR));
+
+    int ind = search_name(n, name);
+    if (ind >= 0) {
+        MCHK(strcat(dest, SUCCESS));
+        for (int j = 0; j < n.names[ind].tab_servs.len; j++) {
+            *new_len_dest += 3 + strlen(n.names[ind].name) + strlen(n.names[ind].tab_servs.servs[j].ip) + strlen(n.names[ind].tab_servs.servs[j].port);
+            dest = incstr(dest, *max_len_dest, max_len_dest, INCREASE_COEF);
+            MCHK(strcat(dest, SEPARATOR));
+            MCHK(strcat(dest, n.names[ind].name));
+            MCHK(strcat(dest, SUBSEPARATOR));
+            MCHK(strcat(dest, n.names[ind].tab_servs.servs[j].ip));
+            MCHK(strcat(dest, SUBSEPARATOR));
+            MCHK(strcat(dest, n.names[ind].tab_servs.servs[j].port));
+        }
+    } else {
+        *new_len_dest += 2; /* /!\ */
+        MCHK(strcat(dest, FAIL));
+        MCHK(strcat(dest, SEPARATOR));
+    }
+    
+    MCHK(strcat(dest, "\0"));
+
+    return true;
 }

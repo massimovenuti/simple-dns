@@ -10,7 +10,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "macro.h"
+#include "chk.h"
 
 #define TABSIZE 100
 #define IPLEN 140

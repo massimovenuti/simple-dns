@@ -7,18 +7,18 @@
  * @return void* 
  */
 void* processes_request(void* arg) {
-    struct thread_arg *info = (struct thread_arg*)arg;
+    struct thread_arg* info = (struct thread_arg*)arg;
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
-    size_t alloc_mem = RESLEN * sizeof(char);
-    char* res = malloc(alloc_mem);
+    size_t max_len_res = REQLEN * sizeof(char);
+    char* res = malloc(max_len_res);
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
     size_t len_res;
 
     PCHK((len_req = recvfrom(info->soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
     BCHK(pthread_barrier_wait(&info->barr));
-    if (make_res(res, req, info->tab_of_addr, &len_res, len_req, &alloc_mem)) {
+    if (make_res(res, req, info->names, &len_res, len_req, &max_len_res)) {
         PCHK(sendto(info->soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
     }
     free(res);
@@ -48,10 +48,10 @@ int main(int argc, char const* argv[]) {
 
     pthread_t tid;
 
-    struct name* tab = parse_conf(argv[2]);
+    struct tab_names tab = parse_conf(argv[2]);
     struct thread_arg arg;
     arg.soc = soc;
-    arg.tab_of_addr = tab;
+    arg.names = tab;
 
     TCHK(pthread_barrier_init(&arg.barr, NULL, 2));
 
@@ -75,7 +75,7 @@ int main(int argc, char const* argv[]) {
             if (!strcmp(str, "stop")) {
                 TCHK(pthread_attr_destroy(&thread_attr));
                 PCHK(close(soc));
-                free_names(tab);
+                free_tab_names(&tab);
                 TCHK(pthread_barrier_destroy(&arg.barr));
                 pthread_exit(NULL);
             }

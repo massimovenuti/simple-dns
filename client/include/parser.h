@@ -2,7 +2,7 @@
 #define __PARSER_H__
 
 #include "addr.h"
-#include "macro.h"
+#include "chk.h"
 #include "req.h"
 
 #define INCREASE_COEF 3

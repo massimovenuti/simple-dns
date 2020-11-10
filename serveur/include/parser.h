@@ -25,25 +25,55 @@ struct server {
     char port[PORTLEN];
 };
 
-struct name {
-    char name[NAMELEN];
-    struct server *servers;
-    int nb_servers;
-    int max_servers;
+struct tab_servers {
+    struct server *servs;
+    int max_len;
+    int len;
 };
 
-void init_names(struct name *names, int start, int end);
+struct name {
+    char name[NAMELEN];
+    struct tab_servers tab_servs;
+};
 
-void free_names(struct name *names);
+struct tab_names {
+    struct name *names;
+    int len;
+    int max_len;
+};
+
+struct tab_servers new_tab_servers();
+
+struct tab_names new_tab_names();
+
+struct server new_server();
+
+struct name new_name();
+
+void free_tab_servers(struct tab_servers *s);
+
+void free_tab_names(struct tab_names *n);
+
+bool last_name(struct name n);      /* /!\ inutile */
+
+bool last_serv(struct server s);    /* /!\ inutile */
+
+void add_name(struct tab_names *n, char *name, struct tab_servers tab_servs);
+
+void add_server(struct tab_servers *s, char *ip, char *port);
+
+int search_name(struct tab_names n, char *name);
+
+void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef);
+
+char *incstr(char *dest, size_t len, size_t *max_len, int coef);
 
 bool compare(char *s1, char *s2);
 
-struct name *parse_conf(const char *file_name);
+struct tab_names parse_conf(const char *file_name);
 
 bool parse_req(char *dest, char *src);
 
-bool increase_memsize(char *dest, size_t *size_dest, size_t size_src);
-
-bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest);
+bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, size_t len_src, size_t *max_len_dest);
 
 #endif

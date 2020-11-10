@@ -13,12 +13,28 @@
 #include <unistd.h>
 
 #include "addr.h"
-#include "macro.h"
+#include "chk.h"
 #include "parser.h"
 #include "req.h"
 
 #define REQLEN 512
 #define TIMEOUT 5
+
+/*
+struct addr_times {
+    struct sockaddr_in6 addr;
+    struct timeval times[TABSIZE];
+    int len;
+    int index;
+};
+
+struct monitoring {
+    struct addr_times addrs_times[TABSIZE];
+    int len;
+};
+
+void add_time(struct addr_times, struct timeval t);
+*/
 
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 

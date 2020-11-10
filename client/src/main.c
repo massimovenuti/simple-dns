@@ -130,6 +130,7 @@ int main(int argc, char const *argv[]) {
     int soc;
 
     struct tab_addrs root_addr;
+    //struct monitoring monitor;
     laddr ignored = laddr_new(), suspicious = laddr_new();
     lreq reqs = lreq_new();
 

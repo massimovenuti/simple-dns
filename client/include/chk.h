@@ -1,5 +1,5 @@
-#ifndef __MACRO_H__
-#define __MACRO_H__
+#ifndef __CHK_H__
+#define __CHK_H__
 
 #define TCHK(exp)                  \
     do {                           \

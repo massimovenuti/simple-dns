@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #include "addr.h"
-#include "macro.h"
+#include "chk.h"
 
 #define NAMELEN 256
 
