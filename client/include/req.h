@@ -30,7 +30,7 @@ typedef struct s_lreq {
     struct s_lreq *next;
 } * lreq;
 
-struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
+struct req* new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
 
 void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs);
 
@@ -40,7 +40,7 @@ lreq lreq_new();
 
 void lreq_destroy(lreq l);
 
-lreq lreq_add(lreq l, struct req x);
+lreq lreq_add(lreq *l, struct req x);
 
 lreq lreq_rm(lreq l, int id);
 
