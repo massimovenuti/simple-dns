@@ -139,7 +139,34 @@ bool parse_req(char *dest, char *src) {
     return false;
 }
 
-bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, size_t len_src, size_t *max_len_dest) {
+char *strcat_res(char *dest, size_t *len_dest, size_t *max_len_dest, char *code, char *name, char *ip, char *port) {
+    size_t size = sizeof(char);
+    if (code != NULL) {
+        if (*code == '1') {
+            *len_dest += (3 * size); /* /!\ */
+            dest = incstr(dest, *len_dest, max_len_dest, INCREASE_COEF);
+            MCHK(strcat(dest, SEPARATOR));
+            MCHK(strcat(dest, SUCCESS));
+        } else {
+            *len_dest += (4 * size); /* /!\ */
+            dest = incstr(dest, *len_dest, max_len_dest, INCREASE_COEF);
+            MCHK(strcat(dest, SEPARATOR));
+            MCHK(strcat(dest, FAIL));
+        }
+        return dest;       
+    }
+    *len_dest += (3 * size) + strlen(name) + strlen(ip) + strlen(port);
+    dest = incstr(dest, *len_dest, max_len_dest, INCREASE_COEF);
+    MCHK(strcat(dest, SEPARATOR));
+    MCHK(strcat(dest, name));
+    MCHK(strcat(dest, SUBSEPARATOR));
+    MCHK(strcat(dest, ip));
+    MCHK(strcat(dest, SUBSEPARATOR));
+    MCHK(strcat(dest, port));
+    return dest;
+}
+
+bool make_res(char *dest, char *src, struct tab_names n, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
     char name[NAMELEN];
 
     if (!parse_req(name, src)) {
@@ -147,27 +174,21 @@ bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, s
         return false;
     }
 
-    *new_len_dest = len_src + 2; /* /!\ */
-    dest = incstr(dest, *new_len_dest, max_len_dest, INCREASE_COEF);
-    MCHK(strcat(strcpy(dest, src), SEPARATOR));
+    *len_dest = len_src;
+    dest = incstr(dest, *len_dest, max_len_dest, INCREASE_COEF);
+    MCHK(strcpy(dest, src));
 
     int ind = search_name(n, name);
     if (ind >= 0) {
-        MCHK(strcat(dest, SUCCESS));
+        dest = strcat_res(dest, len_dest, max_len_dest, SUCCESS, NULL, NULL, NULL);
         for (int j = 0; j < n.names[ind].tab_servs.len; j++) {
-            *new_len_dest += 3 + strlen(n.names[ind].name) + strlen(n.names[ind].tab_servs.servs[j].ip) + strlen(n.names[ind].tab_servs.servs[j].port);
-            dest = incstr(dest, *new_len_dest, max_len_dest, INCREASE_COEF);
-            MCHK(strcat(dest, SEPARATOR));
-            MCHK(strcat(dest, n.names[ind].name));
-            MCHK(strcat(dest, SUBSEPARATOR));
-            MCHK(strcat(dest, n.names[ind].tab_servs.servs[j].ip));
-            MCHK(strcat(dest, SUBSEPARATOR));
-            MCHK(strcat(dest, n.names[ind].tab_servs.servs[j].port));
+            dest = strcat_res(dest, len_dest, max_len_dest, NULL, 
+                              n.names[ind].name, 
+                              n.names[ind].tab_servs.servs[j].ip,
+                              n.names[ind].tab_servs.servs[j].port);
         }
     } else {
-        *new_len_dest += 2; /* /!\ */
-        MCHK(strcat(dest, FAIL));
-        MCHK(strcat(dest, SEPARATOR));
+        dest = strcat_res(dest, len_dest, max_len_dest, FAIL, NULL, NULL, NULL);
     }
 
     MCHK(strcat(dest, "\0"));

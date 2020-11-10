@@ -74,6 +74,6 @@ struct tab_names parse_conf(const char *file_name);
 
 bool parse_req(char *dest, char *src);
 
-bool make_res(char *dest, char *src, struct tab_names n, size_t *new_len_dest, size_t len_src, size_t *max_len_dest);
+bool make_res(char *dest, char *src, struct tab_names n, size_t *len_dest, size_t len_src, size_t *max_len_dest);
 
 #endif
