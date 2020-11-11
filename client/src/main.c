@@ -14,22 +14,38 @@ bool timeout(struct req r) {
 void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr monitored, struct running run) {
     for (lreq tmp = *lr; !lreq_empty(tmp); tmp = tmp->next) {
         if (timeout(tmp->req)) {
-            struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[(tmp)->req.index];
-            laddr la = laddr_search(*suspicious, *addr);
-            if (!laddr_empty(la)) {
-                *suspicious = laddr_add(*suspicious, la->m_addr);
+            struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[tmp->req.index % tmp->req.dest_addrs.len];
+            laddr moni = laddr_search(monitored, *addr);
+            if (laddr_empty(laddr_search(*suspicious, *addr))) {
+                if (run.monitoring) {
+                    fprintf(stderr, "%s:\n", tmp->req.name);
+                    fprint_addr(stderr, *addr);
+                    fprintf(stderr, "Suspicious\n\n");
+                }
+                if (!is_ignored(*ignored, *addr)) {
+                    if (!laddr_empty(moni)) {
+                        *suspicious = laddr_add(*suspicious, moni->m_addr);
+                    } else {
+                        *suspicious = laddr_add(*suspicious, new_maddr(*addr));
+                    }
+                }
+                tmp->req.index = get_index(lr, tmp->req);
                 send_req(soc, &tmp->req, *ignored, run);
             } else {
-                fprintf(stderr, "%s:\nTIMEOUT\n", tmp->req.name);
-                laddr lmoni = laddr_search(monitored, *addr);
-                if (!laddr_empty(lmoni)) {
-                    *ignored = laddr_add(*ignored, lmoni->m_addr);
+                if (run.monitoring) {
+                    fprintf(stderr, "%s:\n", tmp->req.name);
+                    fprint_addr(stderr, *addr);
+                    fprintf(stderr, "TIMEOUT\n\n");
+                }
+                laddr moni = laddr_search(monitored, *addr);
+                if (!laddr_empty(moni)) {
+                    *ignored = laddr_add(*ignored, moni->m_addr);
                 } else {
                     *ignored = laddr_add(*ignored, new_maddr(*addr));
                 }
                 *suspicious = laddr_rm(*suspicious, *addr);
-                tmp->req.index = get_index(*lr, tmp->req);
-                send_req(soc, &tmp->req, *ignored, run);
+                tmp->req.index = get_index(lr, tmp->req);
+                send_req(soc, &tmp->req, *ignored, run); 
             }
         }
     }
@@ -38,6 +54,7 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
 void send_req(int soc, struct req *req, laddr ignored, struct running run) {
     char req_char[REQLEN];
     int len_req;
+    PCHK(gettimeofday(&req->t, NULL));
     if ((len_req = snprintf(req_char, REQLEN, "%d|%ld,%ld|%s", req->id, req->t.tv_sec, req->t.tv_usec, req->name)) > REQLEN - 1) {
         fprintf(stderr, "Request too long");
     }
@@ -45,11 +62,15 @@ void send_req(int soc, struct req *req, laddr ignored, struct running run) {
         fprintf(stderr, "req: %s\n", req_char);
     }
     bool sent = false;
-    int i = req->index;
+    int i = req->index % req->dest_addrs.len;
     for (int n = 0; n < req->dest_addrs.len && !sent; n++) {
         if (!is_ignored(ignored, req->dest_addrs.addrs[i])) {
+            if (run.monitoring) {
+                fprint_addr(stderr, req->dest_addrs.addrs[i]);
+                printf("\n");
+            }
             PCHK(sendto(soc, req_char, len_req + 1, 0, (struct sockaddr *)&req->dest_addrs.addrs[i], (socklen_t)sizeof(struct sockaddr_in6)));
-            req->index = i;
+            req->index += n;
             sent = true;
         }
         i = (i + 1) % req->dest_addrs.len;
@@ -87,7 +108,7 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
         }
     } else {
         if (*input != '!') {
-            struct req req = new_req(reqs, *id, input, root_addr);
+            struct req *req = new_req(reqs, *id, input, root_addr);
             *id += 1;
             send_req(soc, &req, ignored, *run);
         } else {
@@ -134,6 +155,7 @@ void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored,
             for (int i = 0; i < res.addrs.len; i++) {
                 fprint_addr(stdout, res.addrs.addrs[i]);
             }
+            printf("\n");
             *reqs = lreq_rm(*reqs, res.id);
         } else {
             update_req(reqs, &active_req->req, *id, res.addrs);
@@ -141,8 +163,7 @@ void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored,
             *id += 1;
         }
     } else {
-        printf("%s:\n", active_req->req.name);
-        printf("\33[1;31mNot found\033[0m\n");
+        printf("%s:\n\33[1;31mNot found\033[0m\n\n", active_req->req.name);
         *reqs = lreq_rm(*reqs, res.id);
     }
 }
@@ -193,6 +214,7 @@ int main(int argc, char const *argv[]) {
         } else {
             check_timeout(soc, &reqs, &suspicious, &ignored, monitored, run);
         }
+        check_timeout(soc, reqs, &suspicious, &ignored, monitored, run);
     }
 
     while (run.goon && !run.interactive) {
@@ -211,6 +233,7 @@ int main(int argc, char const *argv[]) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {
         }
+        check_timeout(soc, reqs, &suspicious, &ignored, monitored, run);
     }
 
     if (!run.interactive) {

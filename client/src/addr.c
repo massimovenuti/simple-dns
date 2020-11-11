@@ -8,7 +8,7 @@ bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
     }
     if (a1.sin6_family == AF_INET6) {
         inet_ntop(AF_INET6, &a1.sin6_addr, ip1, sizeof(a1));
-        inet_ntop(AF_INET6, &a2.sin6_addr, ip1, sizeof(a2));
+        inet_ntop(AF_INET6, &a2.sin6_addr, ip2, sizeof(a2));
     } else {
         inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1, sizeof(a1));
         inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip2, sizeof(a2));

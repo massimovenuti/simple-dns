@@ -1,14 +1,12 @@
 #include "req.h"
 
-struct req new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
+struct req* new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
     struct req req;
     req.id = id;
     strcpy(req.name, name);
     req.dest_addrs = addrs;
-    PCHK(gettimeofday(&req.t, NULL));
     req.index = get_index(*l, req);
-    *l = lreq_add(*l, req);
-    return req;
+    return &lreq_add(l, req)->req;
 }
 
 void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs) {
@@ -21,7 +19,7 @@ int get_index(lreq l, struct req req) {
     int index = 0;
     lreq tmp;
     for (tmp = l; !lreq_empty(tmp); tmp = tmp->next) {
-        if (addr_in(req.dest_addrs.addrs[0], tmp->req.dest_addrs) && tmp->req.index + 1 > index) {
+        if (req.id != tmp->req.id && addr_in(req.dest_addrs.addrs[0], tmp->req.dest_addrs) && tmp->req.index + 1 > index) {
             index = tmp->req.index + 1;
         }
     }
@@ -41,19 +39,19 @@ void lreq_destroy(lreq l) {
     lreq_destroy(n);
 }
 
-lreq lreq_add(lreq l, struct req x) {
+lreq lreq_add(lreq *l, struct req x) {
     lreq new;
     MCHK(new = malloc(sizeof(struct s_lreq)));
     new->req = x;
     new->next = lreq_new();
     lreq tmp;
-    if (!lreq_empty(l)) {
-        for (tmp = l; !lreq_empty(tmp->next); tmp = tmp->next);
+    if (!lreq_empty(*l)) {
+        for (tmp = *l; !lreq_empty(tmp->next); tmp = tmp->next);
         tmp->next = new;
-        return l;
     } else {
-        return new;
+        *l = new;
     }
+    return new;
 }
 
 lreq lreq_rm(lreq l, int id) {
