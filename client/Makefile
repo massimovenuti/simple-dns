@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Werror -Wvla
-LDFLAGS =
+LDFLAGS = -lm
 
 INCLUDEFLAGS=-I./include
 

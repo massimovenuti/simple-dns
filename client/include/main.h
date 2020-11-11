@@ -16,23 +16,25 @@
 #include "macro.h"
 #include "parser.h"
 #include "req.h"
+#include "time.h"
 
 #define REQLEN 512
 #define TIMEOUT 5
 
-struct client {
+struct running {
     bool goon;
-    bool monitored;
+    bool monitoring;
+    bool interactive;
 };
 
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
-void send_req(int soc, struct req *req, laddr ignored, bool monitoring);
+void send_req(int soc, struct req *req, laddr ignored, struct running run);
 
-struct res receive_res(int soc, bool monitoring);
+struct res receive_res(int soc, laddr *monitored, struct running run);
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, bool *goon, bool *monitoring);
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, struct running *run);
 
-void read_network(int soc, int *id, lreq *reqs, laddr ignored, bool monitoring);
+void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored, struct running run);
 
 #endif

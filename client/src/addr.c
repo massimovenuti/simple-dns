@@ -48,14 +48,10 @@ void laddr_destroy(laddr l) {
     laddr_destroy(n);
 }
 
-struct timeval new_timeval() {
-    struct timeval t;
-    t.tv_sec = 0;
-    t.tv_usec = 0;
-    return t;
-}
-
-void new_use() {
+void use(struct monitored_addr *a, struct timeval t) {
+    struct timeval tmp = op_ntimeval(a->avg_time, '*', a->counter);
+    a->avg_time = op_ntimeval(op_timeval(tmp, '+', t), '/', a->counter + 1);
+    a->counter++;
     return;
 }
 
@@ -63,8 +59,7 @@ struct monitored_addr new_maddr(struct sockaddr_in6 a) {
     struct monitored_addr m_addr;
     m_addr.addr = a;
     m_addr.counter = 0;
-    m_addr.avg_time = new_timeval();
-    m_addr.total_time = new_timeval();
+    m_addr.avg_time = new_timeval(0, 0);
     return m_addr;
 }
 
@@ -75,7 +70,8 @@ laddr laddr_add(laddr l, struct monitored_addr x) {
     new->next = laddr_new();
     laddr tmp;
     if (!laddr_empty(l)) {
-        for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next);
+        for (tmp = l; !laddr_empty(tmp->next); tmp = tmp->next)
+            ;
         tmp->next = new;
         return l;
     } else {
@@ -95,12 +91,12 @@ laddr laddr_rm(laddr l, struct sockaddr_in6 x) {
     return laddr_rm(l->next, x);
 }
 
-struct sockaddr_in6 laddr_elem(laddr l, int i) {
+struct monitored_addr laddr_elem(laddr l, int i) {
     if (laddr_empty(l)) {
         exit(EXIT_FAILURE);
     }
     if (i == 0) {
-        return l->m_addr.addr;
+        return l->m_addr;
     }
     return laddr_elem(l->next, i - 1);
 }

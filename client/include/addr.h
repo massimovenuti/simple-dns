@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+#include "time.h"
 #include "macro.h"
 
 #define TABSIZE 100
@@ -25,7 +26,6 @@ struct monitored_addr {
     struct sockaddr_in6 addr;
     int counter;
     struct timeval avg_time;
-    struct timeval total_time;
 };
 
 typedef struct s_laddr {
@@ -39,15 +39,19 @@ bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs);
 
 void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
 
+struct monitored_addr new_maddr(struct sockaddr_in6 a);
+
+void use(struct monitored_addr *a, struct timeval t);
+
 laddr laddr_new();
 
 void laddr_destroy(laddr l);
 
-laddr laddr_add(laddr l, struct sockaddr_in6 x);
+laddr laddr_add(laddr l, struct monitored_addr x);
 
 laddr laddr_rm(laddr l, struct sockaddr_in6 x);
 
-struct sockaddr_in6 laddr_elem(laddr l, int i);
+struct monitored_addr laddr_elem(laddr l, int i);
 
 int laddr_len(laddr l);
 
