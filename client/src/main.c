@@ -21,7 +21,7 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                     if (run.monitoring) {
                         fprintf(stderr, "%s:\n", tmp->req.name);
                         fprint_addr(stderr, *addr);
-                        fprintf(stderr, "Suspicious\n\n");
+                        fprintf(stderr, "\033[01;33mSuspicious\033[0m\n\n");
                     }
                     if (!laddr_empty(moni)) {
                         *suspicious = laddr_add(*suspicious, moni->m_addr);
@@ -38,7 +38,7 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                 if (run.monitoring) {
                     fprintf(stderr, "%s:\n", tmp->req.name);
                     fprint_addr(stderr, *addr);
-                    fprintf(stderr, "TIMEOUT\n\n");
+                    fprintf(stderr, "\33[1;31mTIMEOUT\033[0m\n\n");
                 }
                 laddr moni = laddr_search(monitored, *addr);
                 if (!laddr_empty(moni)) {
