@@ -10,8 +10,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "time.h"
 #include "macro.h"
+#include "time.h"
 
 #define TABSIZE 100
 #define IPLEN 140
@@ -33,15 +33,7 @@ typedef struct s_laddr {
     struct s_laddr *next;
 } * laddr;
 
-bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
-
-bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs);
-
-void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
-
 struct monitored_addr new_maddr(struct sockaddr_in6 a);
-
-void use(struct monitored_addr *a, struct timeval t);
 
 laddr laddr_new();
 
@@ -59,10 +51,16 @@ laddr laddr_search(laddr l, struct sockaddr_in6 x);
 
 bool laddr_empty(laddr l);
 
+void use(struct monitored_addr *a, struct timeval t);
+
+bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
+
+bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs);
+
 void laddr_fprint(FILE *stream, laddr l);
 
-void addr_print(struct sockaddr_in6 a);         /* /!\ à compléter */
+void fprint_maddr(FILE *stream, struct monitored_addr ma); /* /!\ à compléter */
 
-void maddr_print(struct monitored_addr ma);     /* /!\ à compléter */
+void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
 
 #endif

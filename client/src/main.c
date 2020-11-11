@@ -11,20 +11,25 @@ bool timeout(struct req r) {
     return timercmp(&cur_t, &r.t, >=);
 }
 
-void check_timeout(int soc, lreq lr, laddr suspicious, laddr ignored, struct running run) {
-    for (lreq tmp = lr; !lreq_empty(tmp); tmp = tmp->next) {
+void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr monitored, struct running run) {
+    for (lreq tmp = *lr; !lreq_empty(tmp); tmp = tmp->next) {
         if (timeout(tmp->req)) {
-            struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[lr->req.index];
-            laddr la = laddr_search(suspicious, *addr);
+            struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[(tmp)->req.index];
+            laddr la = laddr_search(*suspicious, *addr);
             if (!laddr_empty(la)) {
-                suspicious = laddr_add(suspicious, la->m_addr);
-                send_req(soc, &tmp->req, ignored, run);
+                *suspicious = laddr_add(*suspicious, la->m_addr);
+                send_req(soc, &tmp->req, *ignored, run);
             } else {
-                fprintf(stderr, "%s:\nTIMEOUT", tmp->req.name);
-                ignored = laddr_add(ignored, la->m_addr);
-                suspicious = laddr_rm(suspicious, *addr);
-                tmp->req.index = get_index(lr, tmp->req);
-                send_req(soc, &tmp->req, ignored, run);
+                fprintf(stderr, "%s:\nTIMEOUT\n", tmp->req.name);
+                laddr lmoni = laddr_search(monitored, *addr);
+                if (!laddr_empty(lmoni)) {
+                    *ignored = laddr_add(*ignored, lmoni->m_addr);
+                } else {
+                    *ignored = laddr_add(*ignored, new_maddr(*addr));
+                }
+                *suspicious = laddr_rm(*suspicious, *addr);
+                tmp->req.index = get_index(*lr, tmp->req);
+                send_req(soc, &tmp->req, *ignored, run);
             }
         }
     }
@@ -186,7 +191,7 @@ int main(int argc, char const *argv[]) {
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {
-            check_timeout(soc, reqs, suspicious, ignored, run);
+            check_timeout(soc, &reqs, &suspicious, &ignored, monitored, run);
         }
     }
 

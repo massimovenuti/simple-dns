@@ -123,6 +123,12 @@ bool laddr_empty(laddr l) { return l == NULL; }
 void laddr_fprint(FILE *stream, laddr l) {
     if (laddr_empty(l))
         return;
-    fprint_addr(stream, l->m_addr.addr);
+    fprint_maddr(stream, l->m_addr);
     laddr_fprint(stream, l->next);
+}
+
+void fprint_maddr(FILE *stream, struct monitored_addr ma) {
+    fprint_addr(stream, ma.addr);
+    fprintf(stream, "number of use:%d\n", ma.counter);
+    fprintf(stream, "average response time:%lds%ldms\n", ma.avg_time.tv_sec, ma.avg_time.tv_usec / 1000);
 }
