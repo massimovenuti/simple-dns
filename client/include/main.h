@@ -33,7 +33,7 @@ void send_req(int soc, struct req *req, laddr ignored, struct running run);
 
 struct res receive_res(int soc, laddr *monitored, struct running run);
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, struct running *run);
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr *monitored, struct running *run);
 
 void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored, struct running run);
 

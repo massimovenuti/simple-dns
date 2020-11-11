@@ -60,14 +60,11 @@ struct res receive_res(int soc, laddr *monitored, struct running run) {
     struct res struc_res = parse_res(res);
     if (run.monitoring) {
         laddr tmp = laddr_search(*monitored, src_addr);
-        struct timeval now, rep_time;
-        gettimeofday(&now, NULL);
-        rep_time = op_timeval(now, '-', struc_res.time);
         if (!laddr_empty(tmp)) {
-            use(&tmp->m_addr, rep_time);
+            use(&tmp->m_addr, struc_res.time);
         } else {
             struct monitored_addr maddr = new_maddr(src_addr);
-            use(&maddr, rep_time);
+            use(&maddr, struc_res.time);
             *monitored = laddr_add(*monitored, maddr);
         }
         fprintf(stderr, "res: %s\n", res);
@@ -76,7 +73,7 @@ struct res receive_res(int soc, laddr *monitored, struct running run) {
     return struc_res;
 }
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, struct running *run) {
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr *monitored, struct running *run) {
     char input[NAMELEN];
     if (fscanf(stream, "%s", input) == EOF) {
         if (ferror(stream)) {
@@ -97,6 +94,7 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
                     fprintf(stderr, "monitoring: enabled");
                 } else {
                     fprintf(stderr, "monitoring: disabled");
+                    laddr_destroy(*monitored);
                 }
             } else if (!strcmp(input, "!ignored")) {
                 fprintf(stderr, "ignored server:\n");
@@ -171,7 +169,7 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &run);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {
@@ -181,7 +179,7 @@ int main(int argc, char const *argv[]) {
 
     while (run.goon && !run.interactive) {
         while (!feof(req_file)) {
-            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &run);
+            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
         }
 
         FD_ZERO(&ensemble);
@@ -190,7 +188,7 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &run);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {

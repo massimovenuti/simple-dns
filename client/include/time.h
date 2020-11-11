@@ -2,6 +2,8 @@
 #define __TIMEVAH_H__
 
 #include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 struct timeval new_timeval(time_t sec, time_t usec);

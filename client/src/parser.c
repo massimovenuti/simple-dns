@@ -53,8 +53,7 @@ struct res parse_res(char *res) {
     struct timeval t;
     PCHK(gettimeofday(&t, NULL));
 
-    s_res.time.tv_sec = t.tv_sec - s_res.time.tv_sec;
-    s_res.time.tv_usec = t.tv_usec - s_res.time.tv_usec;
+    s_res.time = op_timeval(t, '-', s_res.time);
 
     char *token;
     char name[NAMELEN];
