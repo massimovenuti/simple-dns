@@ -12,17 +12,17 @@ bool timeout(struct req r) {
 }
 
 void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr monitored, struct running run) {
-    for (lreq tmp = *lr; !lreq_empty(tmp); tmp = tmp->next) {
+    for (lreq tmp = *lr; !lreq_empty(tmp); tmp = (lreq_empty(tmp)) ? tmp : tmp->next) {
         if (timeout(tmp->req)) {
             struct sockaddr_in6 *addr = &tmp->req.dest_addrs.addrs[tmp->req.index % tmp->req.dest_addrs.len];
             laddr moni = laddr_search(monitored, *addr);
             if (laddr_empty(laddr_search(*suspicious, *addr))) {
-                if (run.monitoring) {
-                    fprintf(stderr, "%s:\n", tmp->req.name);
-                    fprint_addr(stderr, *addr);
-                    fprintf(stderr, "Suspicious\n\n");
-                }
                 if (!is_ignored(*ignored, *addr)) {
+                    if (run.monitoring) {
+                        fprintf(stderr, "%s:\n", tmp->req.name);
+                        fprint_addr(stderr, *addr);
+                        fprintf(stderr, "Suspicious\n\n");
+                    }
                     if (!laddr_empty(moni)) {
                         *suspicious = laddr_add(*suspicious, moni->m_addr);
                     } else {
@@ -30,7 +30,10 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                     }
                 }
                 tmp->req.index = get_index(*lr, tmp->req);
-                send_req(soc, &tmp->req, *ignored, run);
+                if (!send_req(soc, &tmp->req, *ignored, run)) {
+                    *lr = lreq_rm(*lr, tmp->req.id);
+                    tmp = *lr;
+                }
             } else {
                 if (run.monitoring) {
                     fprintf(stderr, "%s:\n", tmp->req.name);
@@ -45,13 +48,16 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                 }
                 *suspicious = laddr_rm(*suspicious, *addr);
                 tmp->req.index = get_index(*lr, tmp->req);
-                send_req(soc, &tmp->req, *ignored, run); 
+                if (!send_req(soc, &tmp->req, *ignored, run)) {
+                    *lr = lreq_rm(*lr, tmp->req.id);
+                    tmp = *lr;
+                }
             }
         }
     }
 }
 
-void send_req(int soc, struct req *req, laddr ignored, struct running run) {
+bool send_req(int soc, struct req *req, laddr ignored, struct running run) {
     char req_char[REQLEN];
     int len_req;
     PCHK(gettimeofday(&req->t, NULL));
@@ -61,9 +67,9 @@ void send_req(int soc, struct req *req, laddr ignored, struct running run) {
     if (run.monitoring) {
         fprintf(stderr, "req: %s\n", req_char);
     }
-    bool sent = false;
+    bool req_send = false;
     int i = req->index % req->dest_addrs.len;
-    for (int n = 0; n < req->dest_addrs.len && !sent; n++) {
+    for (int n = 0; n < req->dest_addrs.len && !req_send; n++) {
         if (!is_ignored(ignored, req->dest_addrs.addrs[i])) {
             if (run.monitoring) {
                 fprint_addr(stderr, req->dest_addrs.addrs[i]);
@@ -71,10 +77,11 @@ void send_req(int soc, struct req *req, laddr ignored, struct running run) {
             }
             PCHK(sendto(soc, req_char, len_req + 1, 0, (struct sockaddr *)&req->dest_addrs.addrs[i], (socklen_t)sizeof(struct sockaddr_in6)));
             req->index += n;
-            sent = true;
+            req_send = true;
         }
         i = (i + 1) % req->dest_addrs.len;
     }
+    return req_send;
 }
 
 struct res receive_res(int soc, laddr *monitored, struct running run) {
@@ -109,8 +116,11 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
     } else {
         if (*input != '!') {
             struct req *req = new_req(reqs, *id, input, root_addr);
-            *id += 1;
-            send_req(soc, req, ignored, *run);
+            if (!send_req(soc, req, ignored, *run)) {
+                *reqs = lreq_rm(*reqs, req->id);
+            } else {
+                *id += 1;
+            }
         } else {
             if (!strcmp(input, "!stop")) {
                 run->goon = false;
@@ -132,12 +142,12 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
                 laddr_fprint(stderr, suspicious);
                 if (run->monitoring) {
                     fprintf(stderr, "\nSERVERS INFORMATIONS\n");
-                    fprintf(stderr, "%d servers used\n" , laddr_len(*monitored));
-                    laddr_fprint(stderr, *monitored);               /* /!\ faire une fonction laddr_print et addr_print */
+                    fprintf(stderr, "%d servers used\n", laddr_len(*monitored));
+                    laddr_fprint(stderr, *monitored); /* /!\ faire une fonction laddr_print et addr_print */
                 }
             } else {
                 fprintf(stderr, "!: invalid option \'%s\'\n", input + 1);
-                fprintf(stderr, "usage : !stop\n"); /* /!\ à compléter */ 
+                fprintf(stderr, "usage : !stop\n"); /* /!\ à compléter */
             }
         }
     }
@@ -159,8 +169,11 @@ void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored,
             *reqs = lreq_rm(*reqs, res.id);
         } else {
             update_req(reqs, &active_req->req, *id, res.addrs);
-            send_req(soc, &active_req->req, ignored, run);
-            *id += 1;
+            if (!send_req(soc, &active_req->req, ignored, run)) {
+                *reqs = lreq_rm(*reqs, active_req->req.id);
+            } else {
+                *id += 1;
+            }
         }
     } else {
         printf("%s:\n\33[1;31mNot found\033[0m\n\n", active_req->req.name);
@@ -180,8 +193,8 @@ int main(int argc, char const *argv[]) {
 
     struct tab_addrs root_addr;
 
-    laddr ignored = laddr_new(), 
-          suspicious = laddr_new(), 
+    laddr ignored = laddr_new(),
+          suspicious = laddr_new(),
           monitored = laddr_new();
 
     lreq reqs = lreq_new();

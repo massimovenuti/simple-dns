@@ -29,7 +29,7 @@ struct running {
 
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
-void send_req(int soc, struct req *req, laddr ignored, struct running run);
+bool send_req(int soc, struct req *req, laddr ignored, struct running run);
 
 struct res receive_res(int soc, laddr *monitored, struct running run);
 

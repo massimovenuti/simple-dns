@@ -114,8 +114,8 @@ function test_memoir() {
 
 EXE=./bin/serveur
 PORT=4242
-CONF=./samples/test1.conf
-CHARGE_CONF=./samples/charge.conf
+CONF=./samples/test/test1.conf
+CHARGE_CONF=./samples/test/charge.conf
 TMPDIR=tmp
 
 mkdir $TMPDIR
