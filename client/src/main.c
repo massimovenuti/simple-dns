@@ -29,7 +29,7 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                         *suspicious = laddr_add(*suspicious, new_maddr(*addr));
                     }
                 }
-                tmp->req.index = get_index(lr, tmp->req);
+                tmp->req.index = get_index(*lr, tmp->req);
                 send_req(soc, &tmp->req, *ignored, run);
             } else {
                 if (run.monitoring) {
@@ -44,7 +44,7 @@ void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored, laddr m
                     *ignored = laddr_add(*ignored, new_maddr(*addr));
                 }
                 *suspicious = laddr_rm(*suspicious, *addr);
-                tmp->req.index = get_index(lr, tmp->req);
+                tmp->req.index = get_index(*lr, tmp->req);
                 send_req(soc, &tmp->req, *ignored, run); 
             }
         }
@@ -110,7 +110,7 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
         if (*input != '!') {
             struct req *req = new_req(reqs, *id, input, root_addr);
             *id += 1;
-            send_req(soc, &req, ignored, *run);
+            send_req(soc, req, ignored, *run);
         } else {
             if (!strcmp(input, "!stop")) {
                 run->goon = false;
@@ -214,7 +214,7 @@ int main(int argc, char const *argv[]) {
         } else {
             check_timeout(soc, &reqs, &suspicious, &ignored, monitored, run);
         }
-        check_timeout(soc, reqs, &suspicious, &ignored, monitored, run);
+        check_timeout(soc, &reqs, &suspicious, &ignored, monitored, run);
     }
 
     while (run.goon && !run.interactive) {
@@ -233,7 +233,7 @@ int main(int argc, char const *argv[]) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {
         }
-        check_timeout(soc, reqs, &suspicious, &ignored, monitored, run);
+        check_timeout(soc, &reqs, &suspicious, &ignored, monitored, run);
     }
 
     if (!run.interactive) {
