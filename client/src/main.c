@@ -73,7 +73,7 @@ struct res receive_res(int soc, laddr *monitored, struct running run) {
     return struc_res;
 }
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr *monitored, struct running *run) {
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs root_addr, laddr ignored, laddr suspicious, laddr *monitored, struct running *run) {
     char input[NAMELEN];
     if (fscanf(stream, "%s", input) == EOF) {
         if (ferror(stream)) {
@@ -91,14 +91,27 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs roo
             } else if (!strcmp(input, "!monitoring")) {
                 run->monitoring = !run->monitoring;
                 if (run->monitoring) {
-                    fprintf(stderr, "monitoring: enabled");
+                    fprintf(stderr, "monitoring: enabled\n");
                 } else {
-                    fprintf(stderr, "monitoring: disabled");
+                    fprintf(stderr, "monitoring: disabled\n");
                     laddr_destroy(*monitored);
                 }
             } else if (!strcmp(input, "!ignored")) {
                 fprintf(stderr, "ignored server:\n");
                 laddr_fprint(stderr, ignored);
+            } else if (!strcmp(input, "!status")) {
+                fprintf(stderr, "%d SERVERS IGNORED\n", laddr_len(ignored));
+                laddr_fprint(stderr, ignored);
+                fprintf(stderr, "\n%d SERVERS TIMEOUT ONCE\n", laddr_len(suspicious));
+                laddr_fprint(stderr, suspicious);
+                if (run->monitoring) {
+                    fprintf(stderr, "\nSERVERS INFORMATIONS\n");
+                    fprintf(stderr, "%d servers used\n" , laddr_len(*monitored));
+                    laddr_fprint(stderr, *monitored);               /* /!\ faire une fonction laddr_print et addr_print */
+                }
+            } else {
+                fprintf(stderr, "!: invalid option \'%s\'\n", input + 1);
+                fprintf(stderr, "usage : !stop\n"); /* /!\ à compléter */ 
             }
         }
     }
@@ -169,7 +182,7 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, suspicious, &monitored, &run);
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {
@@ -179,7 +192,7 @@ int main(int argc, char const *argv[]) {
 
     while (run.goon && !run.interactive) {
         while (!feof(req_file)) {
-            read_input(req_file, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
+            read_input(req_file, soc, &id, &reqs, root_addr, ignored, suspicious, &monitored, &run);
         }
 
         FD_ZERO(&ensemble);
@@ -188,7 +201,7 @@ int main(int argc, char const *argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, root_addr, ignored, &monitored, &run);
+            read_input(stdin, soc, &id, &reqs, root_addr, ignored, suspicious, &monitored, &run);
         } else if (FD_ISSET(soc, &ensemble)) {
             read_network(soc, &id, &reqs, ignored, &monitored, run);
         } else {

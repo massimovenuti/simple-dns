@@ -11,9 +11,9 @@ bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
         inet_ntop(AF_INET6, &a2.sin6_addr, ip1, sizeof(a2));
     } else {
         inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1, sizeof(a1));
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip1, sizeof(a2));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip2, sizeof(a2));
     }
-    return (ntohs(a1.sin6_port) == ntohs(a2.sin6_port)) && !strcmp(ip1, ip2);
+    return (a1.sin6_port == a2.sin6_port) && !strcmp(ip1, ip2);
 }
 
 bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs) {

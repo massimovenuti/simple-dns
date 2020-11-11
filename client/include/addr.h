@@ -61,4 +61,8 @@ bool laddr_empty(laddr l);
 
 void laddr_fprint(FILE *stream, laddr l);
 
+void addr_print(struct sockaddr_in6 a);         /* /!\ à compléter */
+
+void maddr_print(struct monitored_addr ma);     /* /!\ à compléter */
+
 #endif
