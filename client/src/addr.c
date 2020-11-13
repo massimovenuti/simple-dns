@@ -31,8 +31,11 @@ void fprint_addr(FILE *stream, struct sockaddr_in6 addr) {
         inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(addr));
     } else {
         inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, ip, sizeof(addr));
+        if (strstr(ip, "::ffff:") != NULL) {
+            printf("%s\n", strstr(ip, "::ffff:"));
+        }
     }
-    fprintf(stream, "%s:%s\n", ip, port);
+    fprintf(stream, "%s:%s", ip, port);
 }
 
 laddr laddr_new() {
@@ -128,7 +131,9 @@ void laddr_fprint(FILE *stream, laddr l) {
 }
 
 void fprint_maddr(FILE *stream, struct monitored_addr ma) {
+    fprintf(stream, "SERV     ");
     fprint_addr(stream, ma.addr);
-    fprintf(stream, "number of use:%d\n", ma.counter);
-    fprintf(stream, "average response time:%lds%ldms\n", ma.avg_time.tv_sec, ma.avg_time.tv_usec / 1000);
+    fprintf(stream, "\n");
+    fprintf(stream, "USE      %d\n", ma.counter);
+    fprintf(stream, "AVG TIME %fs\n\n", get_timevalue(ma.avg_time));
 }

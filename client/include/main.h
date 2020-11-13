@@ -24,8 +24,22 @@
 struct running {
     bool goon;
     bool monitoring;
-    bool interactive;
 };
+
+struct client {
+    int soc;
+    int req_id;
+    laddr reqs;
+    laddr ignored, suspicious, monitored;
+    struct tab_addrs roots;
+    struct running run;
+};
+
+//code = 1 found
+//code = -1 not found
+//code = 0 timeout
+
+void print_res(char *req, struct tab_addrs ta);
 
 bool is_ignored(laddr l, struct sockaddr_in6 addr);
 
