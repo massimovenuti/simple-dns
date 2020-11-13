@@ -6,8 +6,7 @@
  * @param arg 
  * @return void* 
  */
-void* processes_request(void* arg) {
-    struct thread_arg *info = (struct thread_arg*)arg;
+void processes_request(int soc, struct name *tab_of_addr, lack *ack_wait) {
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
     size_t alloc_mem = RESLEN * sizeof(char);
@@ -15,15 +14,20 @@ void* processes_request(void* arg) {
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
     size_t len_res;
+    struct req s_req;
+    int id;
 
-    PCHK((len_req = recvfrom(info->soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
-    BCHK(pthread_barrier_wait(&info->barr));
-    if (make_res(res, req, info->tab_of_addr, &len_res, len_req, &alloc_mem)) {
-        PCHK(sendto(info->soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
+    PCHK((len_req = recvfrom(soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    if ((id = is_ack(req)) > -1) {
+        *ack_wait = lack_rm(*ack_wait, id, src_addr);
+    }else if ((s_req = parse_req(req)).id > -1) {
+        *ack_wait = lack_add(*ack_wait, s_req.id, src_addr);
+        res = make_res(res, s_req, tab_of_addr, &len_res, len_req, &alloc_mem);
+        PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
     }
     free(res);
 
-    return NULL;
+    return;
 }
 
 int main(int argc, char const* argv[]) {
@@ -42,18 +46,9 @@ int main(int argc, char const* argv[]) {
 
     PCHK(bind(soc, (struct sockaddr*)&listen_addr_v6, sizeof(listen_addr_v6)));
 
-    pthread_attr_t thread_attr;
-    TCHK(pthread_attr_init(&thread_attr));
-    TCHK(pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED));
-
-    pthread_t tid;
-
     struct name* tab = parse_conf(argv[2]);
-    struct thread_arg arg;
-    arg.soc = soc;
-    arg.tab_of_addr = tab;
 
-    TCHK(pthread_barrier_init(&arg.barr, NULL, 2));
+    lack ack_wait = lack_new();
 
     fd_set ensemble;
     bool goon = true;
@@ -67,20 +62,18 @@ int main(int argc, char const* argv[]) {
         PCHK(select(soc + 1, &ensemble, NULL, NULL, NULL));
 
         if (FD_ISSET(soc, &ensemble)) {
-            TCHK(pthread_create(&tid, &thread_attr, processes_request, &arg));
-            BCHK(pthread_barrier_wait(&arg.barr));
+           processes_request(soc, tab, &ack_wait);
         }
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
             scanf("%s", str);
             if (!strcmp(str, "stop")) {
-                TCHK(pthread_attr_destroy(&thread_attr));
                 PCHK(close(soc));
                 free_names(tab);
-                TCHK(pthread_barrier_destroy(&arg.barr));
-                pthread_exit(NULL);
+                lack_destroy(ack_wait);
+                exit(EXIT_SUCCESS);
             }
         }
     }
 
-    pthread_exit(NULL);
+    exit(EXIT_SUCCESS);
 }

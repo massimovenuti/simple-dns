@@ -118,11 +118,20 @@ struct name *parse_conf(const char *file_name) {
  * @return true Si succès
  * @return false Sinon
  */
-bool parse_req(char *dest, char *src) {
-    if (sscanf(src, " %*[^| ] | %*[^| ] | %[^| ] ", dest)) {
-        return true;
+struct req parse_req(char *src) {
+    struct req res;
+    if (sscanf(src, " %d | %ld,%ld | %[^|- ]", &res.id, &res.time.tv_sec, &res.time.tv_usec, res.name) != 4) {
+        res.id = -1;
     }
-    return false;
+    return res;
+}
+
+int is_ack(char str[]) {
+    int res;
+    if (sscanf(str, "ack | %d", &res)) {
+        return res;
+    }
+    return -1;
 }
 
 /**
@@ -160,43 +169,41 @@ bool increase_memsize(char *dest, size_t *size_dest, size_t size_src) {
  * @return true 
  * @return false 
  */
-bool make_res(char *dest, char *src, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
-    char name[NAMELEN];
+char * make_res(char *dest, struct req req, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest) {
+    increase_memsize(dest, max_len_dest, len_src * sizeof(char));
 
-    if (!parse_req(name, src)) {
-        fprintf(stderr, "Request incorrect\n");
-        return false;
-    } else {
-        *len_dest = len_src + 2;
-        increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-        MCHK(strcat(strcpy(dest, src), SEPARATOR));
+    if ((*len_dest = snprintf(dest, *max_len_dest, "%d|%ld,%ld|%s", req.id, req.time.tv_sec, req.time.tv_usec, req.name)) > *max_len_dest - 1) {
+        fprintf(stderr, "Request too long");
+    }
+    *len_dest += 2;
+    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
+    MCHK(strcat(dest, SEPARATOR));
 
-        int i, j;
-        bool found = false;
-        for (i = 0; names[i].nb_servers != 0; i++) {
-            if (compare(name, names[i].name)) {
-                found = true;
-                MCHK(strcat(dest, SUCCESS));
-                for (j = 0; j < names[i].nb_servers; j++) {
-                    *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
-                    increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
-                    MCHK(strcat(dest, SEPARATOR));
-                    MCHK(strcat(dest, names[i].name));
-                    MCHK(strcat(dest, SUBSEPARATOR));
-                    MCHK(strcat(dest, names[i].servers[j].ip));
-                    MCHK(strcat(dest, SUBSEPARATOR));
-                    MCHK(strcat(dest, names[i].servers[j].port));
-                }
+    int i, j;
+    bool found = false;
+    for (i = 0; names[i].nb_servers != 0; i++) {
+        if (compare(req.name, names[i].name)) {
+            found = true;
+            MCHK(strcat(dest, SUCCESS));
+            for (j = 0; j < names[i].nb_servers; j++) {
+                *len_dest += 3 + strlen(names[i].name) + strlen(names[i].servers[j].ip) + strlen(names[i].servers[j].port);
+                increase_memsize(dest, max_len_dest, *len_dest * sizeof(char));
+                MCHK(strcat(dest, SEPARATOR));
+                MCHK(strcat(dest, names[i].name));
+                MCHK(strcat(dest, SUBSEPARATOR));
+                MCHK(strcat(dest, names[i].servers[j].ip));
+                MCHK(strcat(dest, SUBSEPARATOR));
+                MCHK(strcat(dest, names[i].servers[j].port));
             }
         }
-
-        MCHK(strcat(dest, "\0"));
-        if (!found) {
-            *len_dest += 2;
-            MCHK(strcat(dest, FAIL));
-            MCHK(strcat(dest, SEPARATOR));
-        }
-
-        return true;
     }
+
+    MCHK(strcat(dest, "\0"));
+    if (!found) {
+        *len_dest += 2;
+        MCHK(strcat(dest, FAIL));
+        MCHK(strcat(dest, SEPARATOR));
+    }
+
+    return dest;
 }
