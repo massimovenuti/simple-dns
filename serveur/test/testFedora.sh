@@ -54,6 +54,7 @@ function test_req() {
     coproc serv ( $1 $2 $3 )
     sleep 1
     (echo "1|123,456|toto.fr"; sleep 1) | nc -u4 127.0.0.1 $2 &> $4/res.txt || FAIL=1
+    (echo "ack|1"; sleep 10) | nc -u4 127.0.0.1 $2 &>> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID}
 
@@ -63,6 +64,7 @@ function test_req() {
     coproc serv ( $1 $2 $3 )
     sleep 1
     (echo "1|123,456|toto.fr"; sleep 1) | nc -u6 ::1 $2 &> $4/res.txt || FAIL=1
+    (echo "ack|1"; sleep 10) | nc -u6 ::1 $2 &>> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -76,6 +78,17 @@ function test_req() {
     wait ${serv_PID} || FAIL=1
 
     test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requet invalide"
+
+    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060" >> $4/wait.txt
+
+    coproc serv ( $1 $2 $3 )
+    sleep 1
+    (echo "1|123,456|toto.fr"; sleep 10) | nc -u6 ::1 $2 &> $4/res.txt || FAIL=1
+    echo stop >&"${serv[1]}"
+    wait ${serv_PID} || FAIL=1
+
+    diff $4/wait.txt $4/res.txt
+    test $? -eq 0 -a $FAIL -eq 0 || fail "retry si pas de ack"
 
     rm $4/wait.txt
     rm $4/res.txt

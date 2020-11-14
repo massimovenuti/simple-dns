@@ -11,11 +11,13 @@
 #include <sys/types.h>
 
 #include "macro.h"
+#include "parser.h"
 
 struct ack {
-    int id;
+    struct req req;
     struct sockaddr_in6 addr;
-
+    struct timeval time;
+    int retry;
 };
 
 typedef struct s_lack {
@@ -28,7 +30,7 @@ lack lack_new();
 
 void lack_destroy(lack l);
 
-lack lack_add(lack l, int id, struct sockaddr_in6 addr);
+lack lack_add(lack l, struct req req, struct sockaddr_in6 addr);
 
 lack lack_rm(lack l, int id, struct sockaddr_in6 addr);
 

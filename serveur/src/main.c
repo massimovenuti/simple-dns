@@ -6,7 +6,7 @@
  * @param arg 
  * @return void* 
  */
-void processes_request(int soc, struct name *tab_of_addr, lack *ack_wait) {
+void processes_request(int soc, struct name* tab_of_addr, lack* ack_wait) {
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
     size_t alloc_mem = RESLEN * sizeof(char);
@@ -20,14 +20,47 @@ void processes_request(int soc, struct name *tab_of_addr, lack *ack_wait) {
     PCHK((len_req = recvfrom(soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
     if ((id = is_ack(req)) > -1) {
         *ack_wait = lack_rm(*ack_wait, id, src_addr);
-    }else if ((s_req = parse_req(req)).id > -1) {
-        *ack_wait = lack_add(*ack_wait, s_req.id, src_addr);
+    } else if ((s_req = parse_req(req)).id > -1) {
+        *ack_wait = lack_add(*ack_wait, s_req, src_addr);
         res = make_res(res, s_req, tab_of_addr, &len_res, len_req, &alloc_mem);
         PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
     }
     free(res);
 
     return;
+}
+
+bool timeout(struct ack a) {
+    struct timeval cur_t;
+    PCHK(gettimeofday(&cur_t, NULL));
+    cur_t.tv_sec -= TIMEOUT;
+    return timercmp(&cur_t, &a.time, >=);
+}
+
+void tchk_ack(lack* l, int soc, struct name* tab_of_addr) {
+    if (lack_empty(*l)) {
+        return;
+    }
+
+    size_t alloc_mem = RESLEN * sizeof(char);
+    char* res = malloc(alloc_mem);
+    size_t len_res;
+
+    lack tmp;
+    for (tmp = *l; !lack_empty(tmp); tmp = tmp->next) {
+        if (timeout(tmp->ack)) {
+            res = make_res(res, tmp->ack.req, tab_of_addr, &len_res, 0, &alloc_mem);
+            PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&tmp->ack.addr, sizeof(struct sockaddr_in6)));
+            tmp->ack.retry++;
+            if (tmp->ack.retry > 3) {
+                *l = lack_rm(*l, tmp->ack.req.id, tmp->ack.addr);
+                tmp = *l;
+            }
+            PCHK(gettimeofday(&tmp->ack.time, NULL));
+        }
+    }
+
+    free(res);
 }
 
 int main(int argc, char const* argv[]) {
@@ -54,15 +87,16 @@ int main(int argc, char const* argv[]) {
     bool goon = true;
     char str[120];
 
+    struct timeval timeout_loop = {1,0};
     while (goon) {
         FD_ZERO(&ensemble);
         FD_SET(STDIN_FILENO, &ensemble);
         FD_SET(soc, &ensemble);
 
-        PCHK(select(soc + 1, &ensemble, NULL, NULL, NULL));
+        PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
 
         if (FD_ISSET(soc, &ensemble)) {
-           processes_request(soc, tab, &ack_wait);
+            processes_request(soc, tab, &ack_wait);
         }
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
             scanf("%s", str);
@@ -73,6 +107,7 @@ int main(int argc, char const* argv[]) {
                 exit(EXIT_SUCCESS);
             }
         }
+        tchk_ack(&ack_wait, soc, tab);
     }
 
     exit(EXIT_SUCCESS);

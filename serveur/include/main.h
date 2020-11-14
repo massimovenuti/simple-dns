@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "ack.h"
 #include "macro.h"
@@ -20,5 +21,6 @@
 
 #define REQLEN 512
 #define RESLEN 1024
+#define TIMEOUT 5
 
 #endif

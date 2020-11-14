@@ -29,11 +29,13 @@ void lack_destroy(lack l) {
     lack_destroy(n);
 }
 
-lack lack_add(lack l, int id, struct sockaddr_in6 addr) {
+lack lack_add(lack l, struct req req, struct sockaddr_in6 addr) {
     lack new;
     MCHK(new = malloc(sizeof(struct s_lack)));
-    new->ack.id = id;
+    new->ack.req = req;
     new->ack.addr = addr;
+    new->ack.retry = 0;
+    PCHK(gettimeofday(&new->ack.time, NULL));
     new->next = lack_new();
     lack tmp;
     if (!lack_empty(l)) {
@@ -49,7 +51,7 @@ lack lack_rm(lack l, int id, struct sockaddr_in6 addr) {
     if (lack_empty(l)) {
         return lack_new();
     }
-    if (l->ack.id == id && addr_cmp(l->ack.addr, addr)) {
+    if (l->ack.req.id == id && addr_cmp(l->ack.addr, addr)) {
         lack n = l->next;
         free(l);
         return n;
