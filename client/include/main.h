@@ -21,48 +21,54 @@
 #define REQLEN 512
 #define TIMEOUT 5
 
-// code = 1 found
-// code = -1 not found
-// code = 0 timeout
+/* Monitoring */
 
-bool is_ignored(laddr l, struct sockaddr_in6 addr);
+void monitor_timeout(char *req, struct sockaddr_in6 addr, bool first_timeout);
+
+void monitor_reply(lserv *monitored, struct res res, struct sockaddr_in6 addr);
+
+void monitor_shipment(lserv *monitored, char *req, struct sockaddr_in6 addr);
+
+/* Timeout */
 
 bool timeout(struct req req);
 
-void check_timeout(int soc, lreq *lr, laddr *suspicious, laddr *ignored,
-                   laddr monitored, bool monitoring);
+bool handle_timeout(int soc, struct req *req, struct sockaddr_in6 addr, lreq *reqs, lserv *ignored,
+                    lserv *suspicious, lserv *monitored, bool monitoring);
 
-void handle_request(char *input, int soc, int *id, lreq *lr,
-                    struct tab_addrs roots, laddr ignored, bool monitoring);
-
-void handle_monitoring(laddr *monitored, bool *monitoring);
-
-void handle_ignored(laddr ignored);
-
-void handle_status(laddr ignored, laddr suspicious, laddr monitored,
+void check_timeout(int soc, lreq *reqs, lserv *suspicious, lserv *ignored, lserv *monitored,
                    bool monitoring);
 
-void handle_unknown(char *input);
+/* Reply */
 
-void handle_reqfile(const char *path, int soc, int *id, lreq *reqs,
-                    struct tab_addrs *roots, laddr ignored, laddr suspicious,
-                    laddr *monitored, bool *goon, bool *monitoring);
+struct res receive_reply(int soc, lserv *monitored, bool monitoring);
 
-void handle_command(char *command, int soc, int *id, lreq *reqs,
-                    struct tab_addrs *roots, laddr ignored, laddr suspicious,
-                    laddr *monitored, bool *goon, bool *monitoring);
+void handle_reply(int soc, int *id, lreq *reqs, struct req *req, struct res res, lserv ignored,
+                  lserv *monitored, bool monitoring);
 
-void read_input(FILE *stream, int soc, int *id, lreq *reqs,
-                struct tab_addrs *roots, laddr ignored, laddr suspicious,
-                laddr *monitored, bool *goon, bool *monitoring);
+/* Shipment */
 
-void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored,
-                  bool monitoring);
+int reqtostr(struct req s_req, char *str_req);
 
-void print_res(char *req, struct tab_addrs ta);
+bool send_request(int soc, struct req *s_req, lserv ignored, lserv *monitored, bool monitoring);
 
-bool send_req(int soc, struct req *req, laddr ignored, bool monitoring);
+void handle_request(char *input, int soc, int *id, lreq *reqs, struct tab_addrs roots,
+                    lserv ignored, lserv *monitored, bool monitoring);
 
-struct res receive_res(int soc, laddr *monitored, bool monitoring);
+/* Input */
+
+void print_help();
+
+void load_reqfile(const char *path, int soc, int *id, lreq *reqs, struct tab_addrs *roots,
+                  lserv ignored, lserv suspicious, lserv *monitored, bool *goon, bool *monitoring);
+
+void handle_command(char *command, int soc, int *id, lreq *reqs, struct tab_addrs *roots,
+                    lserv ignored, lserv suspicious, lserv *monitored, bool *goon,
+                    bool *monitoring);
+
+void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs *roots, lserv ignored,
+                lserv suspicious, lserv *monitored, bool *goon, bool *monitoring);
+
+void read_network(int soc, int *id, lreq *reqs, lserv ignored, lserv *monitored, bool monitoring);
 
 #endif

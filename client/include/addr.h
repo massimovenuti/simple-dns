@@ -22,44 +22,51 @@ struct tab_addrs {
     int len;
 };
 
-struct monitored_addr {
+struct server {
     struct sockaddr_in6 addr;
-    int counter;
-    struct timeval avg_time;
+    int nb_replies;
+    int nb_shipments;
+    struct timeval avg_reply_time;
 };
 
-typedef struct s_laddr {
-    struct monitored_addr m_addr;
-    struct s_laddr *next;
-} * laddr;
+typedef struct s_lserv {
+    struct server server;
+    struct s_lserv *next;
+} * lserv;
 
-struct monitored_addr new_maddr(struct sockaddr_in6 a);
+void add_shipment(struct server *s);
 
-laddr laddr_new();
+void add_reply(struct server *s, struct timeval t);
 
-void laddr_destroy(laddr l);
+struct server new_serv(struct sockaddr_in6 a);
 
-laddr laddr_add(laddr l, struct monitored_addr x);
+lserv lserv_new();
 
-laddr laddr_rm(laddr l, struct sockaddr_in6 x);
+void lserv_destroy(lserv l);
 
-struct monitored_addr laddr_elem(laddr l, int i);
+lserv lserv_add(lserv l, struct server x);
 
-int laddr_len(laddr l);
+lserv lserv_rm(lserv l, struct sockaddr_in6 x);
 
-laddr laddr_search(laddr l, struct sockaddr_in6 x);
+struct server lserv_elem(lserv l, int i);
 
-bool laddr_empty(laddr l);
+int lserv_len(lserv l);
 
-void use(struct monitored_addr *a, struct timeval t);
+lserv lserv_search(lserv l, struct sockaddr_in6 x);
+
+bool lserv_belong(struct sockaddr_in6 addr, lserv servs);
+
+bool lserv_empty(lserv l);
+
+void use(struct server *a, struct timeval t);
 
 bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
 
 bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs);
 
-void laddr_fprint(FILE *stream, laddr l);
+void lserv_fprint(FILE *stream, lserv l);
 
-void fprint_maddr(FILE *stream, struct monitored_addr ma); /* /!\ à compléter */
+void fprint_serv(FILE *stream, struct server serv); /* /!\ à compléter */
 
 void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
 
