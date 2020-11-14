@@ -37,10 +37,10 @@ function test_bad_file() {
 function test_run() {
     debut_test 3 "Test d'execution"
     local FAIL=0
-    coproc serv ( $1 $2 $3 || FAIL=1 )
+    coproc serv ( $1 $2 $3 )
     sleep 1
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
+    wait ${serv_PID} || FAIL=1
     test $FAIL -eq 0 || fail "execution"
     fin_test
 }
@@ -51,31 +51,44 @@ function test_req() {
     printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060" > $4/wait.txt
 
     local FAIL=0
-    coproc serv ( $1 $2 $3 || FAIL=1 )
+    coproc serv ( $1 $2 $3 )
     sleep 1
     echo "1|123,456|toto.fr" | nc -u4 -W 1 127.0.0.1 $2 &> $4/res.txt || FAIL=1
+    echo "ack|1" | nc -u4 -w5 1 127.0.0.1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
+    wait ${serv_PID} || FAIL=1
 
     diff $4/wait.txt $4/res.txt
     test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV4"
 
-    coproc serv ( $1 $2 $3 || FAIL=1 )
+    coproc serv ( $1 $2 $3 )
     sleep 1
     echo "1|123,456|toto.fr" | nc -u6 -W 1 ::1 $2 &> $4/res.txt || FAIL=1
+    echo "ack|1" | nc -u6 -w 5 ::1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
+    wait ${serv_PID} || FAIL=1
 
     diff $4/wait.txt $4/res.txt
     test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV6"
 
-    coproc serv ( $1 $2 $3 &> /dev/null || FAIL=1 )
+    coproc serv ( $1 $2 $3 &> /dev/null )
     sleep 1
     echo "Oh, des regrets, des regrets, des regrets" | nc -u6 -w 5 ::1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
+    wait ${serv_PID} || FAIL=1
 
     test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requet invalide"
+
+    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060" >> $4/wait.txt
+
+    coproc serv ( $1 $2 $3 )
+    sleep 1
+    (echo "1|123,456|toto.fr"; sleep 10) |  nc -u6 -w 10 ::1 $2 &> $4/res.txt || FAIL=1
+    echo stop >&"${serv[1]}"
+    wait ${serv_PID} || FAIL=1
+
+    diff $4/wait.txt $4/res.txt
+    test $? -eq 0 -a $FAIL -eq 0 || fail "retry si pas de ack"
 
     rm $4/wait.txt
     rm $4/res.txt
@@ -85,30 +98,30 @@ function test_req() {
 function test_charge() {
     debut_test 5 "Test de charge"
     local FAIL=0
-    coproc serv ( $1 $2 $3 || FAIL=1 )
+    coproc serv ( $1 $2 $3 )
     sleep 1
     for i in {1..10000}
     do
         echo "1|123,456|toto.fr" | nc -u -W 1 ::1 $2 &> /dev/null || FAIL=1 &
     done
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
-    test $FAIL -eq 0 || fail "testde charge"
+    wait ${serv_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test de charge"
     fin_test
 }
 
 function test_memoir() {
     debut_test 6 "Test de memoir"
     local FAIL=0
-    coproc serv ( valgrind --leak-check=full $1 $2 $3 &> /dev/null || FAIL=1 )
+    coproc serv ( valgrind --leak-check=full $1 $2 $3 &> /dev/null )
     sleep 1
     for i in {1..10000}
     do
         echo "1|123,456|toto.fr" | nc -u -W 1 ::1 $2 &> /dev/null || FAIL=1 &
     done
     echo stop >&"${serv[1]}"
-    wait ${serv_PID}
-    test $FAIL -eq 0 || fail "testde charge"
+    wait ${serv_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "Test de memoir"
     fin_test
 }
 

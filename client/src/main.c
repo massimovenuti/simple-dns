@@ -94,6 +94,17 @@ void check_timeout(int soc, lreq *reqs, lserv *suspicious, lserv *ignored, lserv
     }
 }
 
+void send_ack(int soc, int id, struct sockaddr_in6 addr) {
+    char ack[20];
+    int ack_len;
+    if ((ack_len = snprintf(ack, 20, "ack|%d", id)) > 20 - 1) {
+        fprintf(stderr, "ack too long");
+        exit(EXIT_FAILURE);
+    }
+    PCHK(sendto(soc, ack, ack_len + 1, 0, (struct sockaddr *)&addr,
+                (socklen_t)sizeof(struct sockaddr_in6)));
+}
+
 struct res receive_reply(int soc, lserv *monitored, bool monitoring) {
     char str_res[REQLEN];
     struct sockaddr_in6 src_addr;
@@ -101,6 +112,11 @@ struct res receive_reply(int soc, lserv *monitored, bool monitoring) {
     ssize_t len_res;
     PCHK(len_res = recvfrom(soc, str_res, REQLEN, 0, (struct sockaddr *)&src_addr, &len_addr));
     struct res s_res = parse_res(str_res);
+
+    if (s_res.id != -1) {
+        send_ack(soc, s_res.id, src_addr);
+    }
+
     if (monitoring) {
         monitor_reply(monitored, s_res, src_addr);
     }

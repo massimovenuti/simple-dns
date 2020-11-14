@@ -48,6 +48,8 @@ void handle_reply(int soc, int *id, lreq *reqs, struct req *req, struct res res,
 
 /* Shipment */
 
+void send_ack(int soc, int id, struct sockaddr_in6 addr);
+
 int reqtostr(struct req s_req, char *str_req);
 
 bool send_request(int soc, struct req *s_req, lserv ignored, lserv *monitored, bool monitoring);

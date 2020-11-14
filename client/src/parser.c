@@ -49,7 +49,8 @@ struct res parse_res(char *res) {
                &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name,
                &s_res.code, tab_addrs) < 4) {
         fprintf(stderr, "Incorrect server result\n");
-        exit(EXIT_FAILURE);
+        s_res.id = -1;
+        return s_res;
     }
 
     struct timeval t;
