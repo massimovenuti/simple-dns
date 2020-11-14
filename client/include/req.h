@@ -36,20 +36,18 @@ void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs);
 
 int get_index(lreq l, struct req req);
 
-lreq lreq_new();
+lreq lrnew();
 
-void lreq_destroy(lreq l);
+void lrfree(lreq l);
 
-lreq lreq_add(lreq *l, struct req x);
+lreq lradd(lreq *l, struct req x);
 
-lreq lreq_rm(lreq l, int id);
+lreq lrrm(lreq l, int id);
 
-struct req lreq_elem(lreq l, int i);
+int lrlen(lreq l);
 
-int lreq_len(lreq l);
+lreq lrsearch(lreq l, int id);
 
-lreq lreq_search(lreq l, int id);
-
-bool lreq_empty(lreq l);
+bool lrempty(lreq l);
 
 #endif

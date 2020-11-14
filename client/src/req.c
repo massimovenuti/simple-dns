@@ -1,12 +1,12 @@
 #include "req.h"
 
-struct req* new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
+struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
     struct req req;
     req.id = id;
     strcpy(req.name, name);
     req.dest_addrs = addrs;
     req.index = get_index(*l, req);
-    return &lreq_add(l, req)->req;
+    return &lradd(l, req)->req;
 }
 
 void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs) {
@@ -18,35 +18,35 @@ void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs) {
 int get_index(lreq l, struct req req) {
     int index = 0;
     lreq tmp;
-    for (tmp = l; !lreq_empty(tmp); tmp = tmp->next) {
-        if (req.id != tmp->req.id && addr_in(req.dest_addrs.addrs[0], tmp->req.dest_addrs) && tmp->req.index + 1 > index) {
+    for (tmp = l; !lrempty(tmp); tmp = tmp->next) {
+        if (req.id != tmp->req.id && belong(req.dest_addrs.addrs[0], tmp->req.dest_addrs) &&
+            tmp->req.index + 1 > index) {
             index = tmp->req.index + 1;
         }
     }
     return index;
 }
 
-lreq lreq_new() {
-    return NULL;
-}
+lreq lrnew() { return NULL; }
 
-void lreq_destroy(lreq l) {
-    if (lreq_empty(l)) {
+void lrfree(lreq l) {
+    if (lrempty(l)) {
         return;
     }
     lreq n = l->next;
     free(l);
-    lreq_destroy(n);
+    lrfree(n);
 }
 
-lreq lreq_add(lreq *l, struct req x) {
+lreq lradd(lreq *l, struct req x) {
     lreq new;
     MCHK(new = malloc(sizeof(struct s_lreq)));
     new->req = x;
-    new->next = lreq_new();
+    new->next = lrnew();
     lreq tmp;
-    if (!lreq_empty(*l)) {
-        for (tmp = *l; !lreq_empty(tmp->next); tmp = tmp->next);
+    if (!lrempty(*l)) {
+        for (tmp = *l; !lrempty(tmp->next); tmp = tmp->next)
+            ;
         tmp->next = new;
     } else {
         *l = new;
@@ -54,8 +54,8 @@ lreq lreq_add(lreq *l, struct req x) {
     return new;
 }
 
-lreq lreq_rm(lreq l, int id) {
-    if (lreq_empty(l)) {
+lreq lrrm(lreq l, int id) {
+    if (lrempty(l)) {
         return l;
     }
     if (l->req.id == id) {
@@ -63,35 +63,25 @@ lreq lreq_rm(lreq l, int id) {
         free(l);
         return n;
     }
-    l->next = lreq_rm(l->next, id);
+    l->next = lrrm(l->next, id);
     return l;
 }
 
-struct req lreq_elem(lreq l, int i) {
-    if (lreq_empty(l)) {
-        exit(EXIT_FAILURE);
-    }
-    if (i == 0) {
-        return l->req;
-    }
-    return lreq_elem(l->next, i - 1);
-}
-
-int lreq_len(lreq l) {
-    if (lreq_empty(l)) {
+int lrlen(lreq l) {
+    if (lrempty(l)) {
         return 0;
     }
-    return 1 + lreq_len(l->next);
+    return 1 + lrlen(l->next);
 }
 
-lreq lreq_search(lreq l, int id) {
-    if (lreq_empty(l)) {
-        return lreq_new();
+lreq lrsearch(lreq l, int id) {
+    if (lrempty(l)) {
+        return lrnew();
     }
     if (l->req.id == id) {
         return l;
     }
-    return lreq_search(l->next, id);
+    return lrsearch(l->next, id);
 }
 
-bool lreq_empty(lreq l) { return l == NULL; }
+bool lrempty(lreq l) { return l == NULL; }

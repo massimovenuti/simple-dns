@@ -35,7 +35,7 @@ struct tab_addrs parse_conf(const char *file_name) {
         }
         res.addrs[i] = convert(ip, port);
     }
-    res.len = i; /* /!\ peut être une erreur */
+    res.len = i;
     PCHK(fclose(file));
     return res;
 }
@@ -56,7 +56,7 @@ struct res parse_res(char *res) {
     struct timeval t;
     PCHK(gettimeofday(&t, NULL));
 
-    s_res.time = op_timeval(t, '-', s_res.time);
+    s_res.time = op_timeval(t, s_res.time, '-');
 
     char *token;
     char name[NAMELEN];
@@ -84,7 +84,7 @@ struct res parse_res(char *res) {
             nb_addrs++;
             token = strtok(NULL, SEPARATOR);
         } while (nb_addrs < TABSIZE && token != NULL);
-        s_res.addrs.len = nb_addrs; /* /!\ peut être une erreur */
+        s_res.addrs.len = nb_addrs;
     }
     return s_res;
 }
