@@ -48,7 +48,7 @@ void tchk_ack(lack* l, int soc, struct name* tab_of_addr) {
     size_t len_res;
 
     lack tmp;
-    for (tmp = *l; !lack_empty(tmp); tmp = tmp->next) {
+    for (tmp = *l; !lack_empty(tmp); tmp = (lack_empty(tmp)) ? tmp : tmp->next) {
         if (timeout(tmp->ack)) {
             res = make_res(res, tmp->ack.req, tab_of_addr, &len_res, 0, &alloc_mem);
             PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&tmp->ack.addr, sizeof(struct sockaddr_in6)));
