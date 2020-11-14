@@ -10,8 +10,10 @@ bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
         inet_ntop(AF_INET6, &a1.sin6_addr, ip1, sizeof(a1));
         inet_ntop(AF_INET6, &a2.sin6_addr, ip2, sizeof(a2));
     } else {
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1, sizeof(a1));
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip2, sizeof(a2));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1,
+                  sizeof(a1));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip2,
+                  sizeof(a2));
     }
     return (a1.sin6_port == a2.sin6_port) && !strcmp(ip1, ip2);
 }
@@ -23,24 +25,7 @@ bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs) {
     return i != addrs.len;
 }
 
-void fprint_addr(FILE *stream, struct sockaddr_in6 addr) {
-    char ip[IPLEN];
-    char port[PORTLEN];
-    sprintf(port, "%d", ntohs(addr.sin6_port));
-    if (addr.sin6_family == AF_INET6) {
-        inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(addr));
-    } else {
-        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, ip, sizeof(addr));
-        if (strstr(ip, "::ffff:") != NULL) {
-            printf("%s\n", strstr(ip, "::ffff:"));
-        }
-    }
-    fprintf(stream, "%s:%s", ip, port);
-}
-
-laddr laddr_new() {
-    return NULL;
-}
+laddr laddr_new() { return NULL; }
 
 void laddr_destroy(laddr l) {
     if (laddr_empty(l)) {
@@ -124,16 +109,32 @@ laddr laddr_search(laddr l, struct sockaddr_in6 x) {
 bool laddr_empty(laddr l) { return l == NULL; }
 
 void laddr_fprint(FILE *stream, laddr l) {
-    if (laddr_empty(l))
-        return;
+    if (laddr_empty(l)) return;
     fprint_maddr(stream, l->m_addr);
     laddr_fprint(stream, l->next);
 }
 
 void fprint_maddr(FILE *stream, struct monitored_addr ma) {
-    fprintf(stream, "SERV     ");
     fprint_addr(stream, ma.addr);
-    fprintf(stream, "\n");
-    fprintf(stream, "USE      %d\n", ma.counter);
-    fprintf(stream, "AVG TIME %fs\n\n", get_timevalue(ma.avg_time));
+    fprintf(stream, NEWLINE);
+    if (ma.counter > 0) {
+        fprintf(stream, "use      %d\n", ma.counter);
+    }
+    if (ma.avg_time.tv_sec + ma.avg_time.tv_usec > 0) {
+        fprintf(stream, "avg time %fs" NEWLINE NEWLINE,
+                get_timevalue(ma.avg_time));
+    }
+}
+
+void fprint_addr(FILE *stream, struct sockaddr_in6 addr) {
+    char ip[IPLEN];
+    char port[PORTLEN];
+    sprintf(port, "%d", ntohs(addr.sin6_port));
+    if (addr.sin6_family == AF_INET6) {
+        inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(addr));
+    } else {
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&addr))->sin_addr, ip,
+                  sizeof(addr));
+    }
+    fprintf(stream, "%s:%s", ip, port);
 }

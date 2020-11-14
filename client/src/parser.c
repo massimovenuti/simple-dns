@@ -30,22 +30,24 @@ struct tab_addrs parse_conf(const char *file_name) {
     int i;
     for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
         if (i >= TABSIZE) {
-            //raler
+            // raler
             break;
         }
         res.addrs[i] = convert(ip, port);
     }
-    res.len = i;      /* /!\ peut être une erreur */
+    res.len = i; /* /!\ peut être une erreur */
     PCHK(fclose(file));
     return res;
 }
 
 struct res parse_res(char *res) {
     struct res s_res;
-    char tab_addrs[1024]; // à modifier
+    char tab_addrs[1024];  // à modifier
     *tab_addrs = '\0';
 
-    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id, &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name, &s_res.code, tab_addrs) < 4) {
+    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id,
+               &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name,
+               &s_res.code, tab_addrs) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         exit(EXIT_FAILURE);
     }
@@ -68,7 +70,8 @@ struct res parse_res(char *res) {
         s_res.addrs.len = 0;
     } else {
         do {
-            if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
+            if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) !=
+                3) {
                 fprintf(stderr, "Server result incorrect\n");
                 exit(EXIT_FAILURE);
             }
@@ -80,7 +83,7 @@ struct res parse_res(char *res) {
             nb_addrs++;
             token = strtok(NULL, SEPARATOR);
         } while (nb_addrs < TABSIZE && token != NULL);
-        s_res.addrs.len = nb_addrs;        /* /!\ peut être une erreur */
+        s_res.addrs.len = nb_addrs; /* /!\ peut être une erreur */
     }
     return s_res;
 }
