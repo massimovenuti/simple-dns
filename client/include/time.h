@@ -10,8 +10,8 @@ struct timeval new_timeval(time_t sec, time_t usec);
 
 float get_timevalue(struct timeval t);
 
-struct timeval op_timeval(struct timeval t1, char op, struct timeval t2);
+struct timeval op_timeval(struct timeval t1, struct timeval t2, char op);
 
-struct timeval op_ntimeval(struct timeval t, char op, int n);
+struct timeval op_ntimeval(struct timeval t, int n, char op);
 
 #endif
