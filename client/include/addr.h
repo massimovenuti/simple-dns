@@ -38,36 +38,36 @@ void add_shipment(struct server *s);
 
 void add_reply(struct server *s, struct timeval t);
 
-struct server new_serv(struct sockaddr_in6 a);
+struct server new_server(struct sockaddr_in6 a);
 
-lserv lserv_new();
 
-void lserv_destroy(lserv l);
 
-lserv lserv_add(lserv l, struct server x);
+lserv lsnew();
 
-lserv lserv_rm(lserv l, struct sockaddr_in6 x);
+void lsfree(lserv l);
 
-struct server lserv_elem(lserv l, int i);
+lserv lsadd(lserv l, struct server x);
 
-int lserv_len(lserv l);
+lserv lsrm(lserv l, struct sockaddr_in6 x);
 
-lserv lserv_search(lserv l, struct sockaddr_in6 x);
+int lslen(lserv l);
 
-bool lserv_belong(struct sockaddr_in6 addr, lserv servs);
+lserv lssearch(lserv l, struct sockaddr_in6 x);
 
-bool lserv_empty(lserv l);
+bool lsbelong(struct sockaddr_in6 addr, lserv servs);
 
-void use(struct server *a, struct timeval t);
+bool lsempty(lserv l);
 
-bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
 
-bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs);
 
-void lserv_fprint(FILE *stream, lserv l);
+bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
 
-void fprint_serv(FILE *stream, struct server serv); /* /!\ à compléter */
+bool belong(struct sockaddr_in6 addr, struct tab_addrs addrs);
 
-void fprint_addr(FILE *stream, struct sockaddr_in6 addr);
+void lsfprint(FILE *stream, lserv l);
+
+void sfprint(FILE *stream, struct server serv); /* /!\ à compléter */
+
+void afprint(FILE *stream, struct sockaddr_in6 addr);
 
 #endif

@@ -1,6 +1,6 @@
 #include "addr.h"
 
-bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
+bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
     char ip1[IPLEN];
     char ip2[IPLEN];
     if (a1.sin6_family != a2.sin6_family) {
@@ -16,47 +16,47 @@ bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
     return (a1.sin6_port == a2.sin6_port) && !strcmp(ip1, ip2);
 }
 
-bool addr_in(struct sockaddr_in6 addr, struct tab_addrs addrs) {
+bool belong(struct sockaddr_in6 addr, struct tab_addrs addrs) {
     int i;
-    for (i = 0; i < addrs.len && !addr_cmp(addr, addrs.addrs[i]); i++)
+    for (i = 0; i < addrs.len && !addrcmp(addr, addrs.addrs[i]); i++)
         ;
     return i != addrs.len;
 }
 
-lserv lserv_new() { return NULL; }
+lserv lsnew() { return NULL; }
 
-void lserv_destroy(lserv l) {
-    if (lserv_empty(l)) {
+void lsfree(lserv l) {
+    if (lsempty(l)) {
         return;
     }
     lserv n = l->next;
     free(l);
-    lserv_destroy(n);
+    lsfree(n);
 }
 
 void add_shipment(struct server *s) { s->nb_shipments++; }
 
 void add_reply(struct server *s, struct timeval t) {
-    struct timeval tmp = op_ntimeval(s->avg_reply_time, '*', s->nb_replies);
-    s->avg_reply_time = op_ntimeval(op_timeval(tmp, '+', t), '/', s->nb_replies + 1);
+    struct timeval tmp = op_ntimeval(s->avg_reply_time, s->nb_replies, '*');
+    s->avg_reply_time = op_ntimeval(op_timeval(tmp, t, '+'), s->nb_replies + 1, '/');
     s->nb_replies++;
     return;
 }
 
-struct server new_serv(struct sockaddr_in6 a) {
+struct server new_server(struct sockaddr_in6 a) {
     struct timeval t = new_timeval(0, 0);
     struct server serv = {a, 0, 0, t};
     return serv;
 }
 
-lserv lserv_add(lserv l, struct server x) {
+lserv lsadd(lserv l, struct server x) {
     lserv new;
     MCHK(new = malloc(sizeof(struct s_lserv)));
     new->server = x;
-    new->next = lserv_new();
+    new->next = lsnew();
     lserv tmp;
-    if (!lserv_empty(l)) {
-        for (tmp = l; !lserv_empty(tmp->next); tmp = tmp->next)
+    if (!lsempty(l)) {
+        for (tmp = l; !lsempty(tmp->next); tmp = tmp->next)
             ;
         tmp->next = new;
         return l;
@@ -65,61 +65,49 @@ lserv lserv_add(lserv l, struct server x) {
     }
 }
 
-lserv lserv_rm(lserv l, struct sockaddr_in6 x) {
-    if (lserv_empty(l)) {
-        return lserv_new();
+lserv lsrm(lserv l, struct sockaddr_in6 x) {
+    if (lsempty(l)) {
+        return lsnew();
     }
-    if (addr_cmp(l->server.addr, x)) {
+    if (addrcmp(l->server.addr, x)) {
         lserv n = l->next;
         free(l);
         return n;
     }
-    return lserv_rm(l->next, x);
+    return lsrm(l->next, x);
 }
 
-struct server lserv_elem(lserv l, int i) {
-    if (lserv_empty(l)) {
-        exit(EXIT_FAILURE);
-    }
-    if (i == 0) {
-        return l->server;
-    }
-    return lserv_elem(l->next, i - 1);
-}
+bool lsbelong(struct sockaddr_in6 addr, lserv servs) { return !lsempty(lssearch(servs, addr)); }
 
-bool lserv_belong(struct sockaddr_in6 addr, lserv servs) {
-    return !lserv_empty(lserv_search(servs, addr));
-}
-
-int lserv_len(lserv l) {
-    if (lserv_empty(l)) {
+int lslen(lserv l) {
+    if (lsempty(l)) {
         return 0;
     }
-    return 1 + lserv_len(l->next);
+    return 1 + lslen(l->next);
 }
 
-lserv lserv_search(lserv l, struct sockaddr_in6 x) {
-    if (lserv_empty(l)) {
-        return lserv_new();
+lserv lssearch(lserv l, struct sockaddr_in6 x) {
+    if (lsempty(l)) {
+        return lsnew();
     }
-    if (addr_cmp(l->server.addr, x)) {
+    if (addrcmp(l->server.addr, x)) {
         return l;
     }
-    return lserv_search(l->next, x);
+    return lssearch(l->next, x);
 }
 
-bool lserv_empty(lserv l) { return l == NULL; }
+bool lsempty(lserv l) { return l == NULL; }
 
-void lserv_fprint(FILE *stream, lserv l) {
-    if (lserv_empty(l)) {
+void lsfprint(FILE *stream, lserv l) {
+    if (lsempty(l)) {
         return;
     }
-    fprint_serv(stream, l->server);
-    lserv_fprint(stream, l->next);
+    sfprint(stream, l->server);
+    lsfprint(stream, l->next);
 }
 
-void fprint_serv(FILE *stream, struct server serv) {
-    fprint_addr(stream, serv.addr);
+void sfprint(FILE *stream, struct server serv) {
+    afprint(stream, serv.addr);
     fprintf(stream, NEWLINE);
     if (serv.nb_shipments > 0) {
         fprintf(stream, "number of shipments  %d\n", serv.nb_shipments);
@@ -133,7 +121,7 @@ void fprint_serv(FILE *stream, struct server serv) {
     }
 }
 
-void fprint_addr(FILE *stream, struct sockaddr_in6 addr) {
+void afprint(FILE *stream, struct sockaddr_in6 addr) {
     char ip[IPLEN];
     char port[PORTLEN];
     sprintf(port, "%d", ntohs(addr.sin6_port));
