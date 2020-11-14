@@ -97,6 +97,18 @@ bool send_req(int soc, struct req *req, laddr ignored, bool monitoring) {
     return req_send;
 }
 
+void send_ack(int soc, int id, struct sockaddr_in6 addr) {
+    char ack[20];
+    int ack_len;
+    if ((ack_len = snprintf(ack, 20, "ack|%d", id)) > 20 - 1) {
+        fprintf(stderr, "ack to long");
+        exit(EXIT_FAILURE);
+    }
+    PCHK(sendto(soc, ack, ack_len + 1, 0,
+                (struct sockaddr *)&addr,
+                (socklen_t)sizeof(struct sockaddr_in6)));
+}
+
 struct res receive_res(int soc, laddr *monitored, bool monitoring) {
     char res[REQLEN];
     struct sockaddr_in6 src_addr;
@@ -105,6 +117,10 @@ struct res receive_res(int soc, laddr *monitored, bool monitoring) {
     PCHK(len_res = recvfrom(soc, res, REQLEN, 0, (struct sockaddr *)&src_addr,
                             &len_addr));
     struct res struc_res = parse_res(res);
+    if (struc_res.id != -1) {
+        send_ack(soc, struc_res.id, src_addr);
+    }
+
     if (monitoring) {
         laddr tmp = laddr_search(*monitored, src_addr);
         if (!laddr_empty(tmp)) {
@@ -133,6 +149,7 @@ void print_res(char *req, struct tab_addrs ta) {
 void read_network(int soc, int *id, lreq *reqs, laddr ignored, laddr *monitored,
                   bool monitoring) {
     struct res res = receive_res(soc, monitored, monitoring);
+    if (res.id == -1) return;
     lreq active_req = lreq_search(*reqs, res.id);
     if (lreq_empty(active_req)) {
         return;

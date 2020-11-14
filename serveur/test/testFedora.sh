@@ -103,6 +103,7 @@ function test_charge() {
     for i in {1..1000}
     do
         echo "1|123,456|toto.fr" | nc -u ::1 $2 &> /dev/null || FAIL=1
+        echo "ack|1" | nc -u6 ::1 $2 &>> /dev/null || FAIL=1
     done
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
@@ -118,6 +119,7 @@ function test_memoir() {
     for i in {1..1000}
     do
         echo "1|123,456|toto.fr" | nc -u ::1 $2 &> /dev/null || FAIL=1
+        echo "ack|1" | nc -u6 ::1 $2 &>> /dev/null || FAIL=1
     done
     echo stop >&"${serv[1]}"
     wait ${serv_PID}  || FAIL=1

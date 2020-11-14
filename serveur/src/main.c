@@ -18,6 +18,7 @@ void processes_request(int soc, struct name* tab_of_addr, lack* ack_wait) {
     int id;
 
     PCHK((len_req = recvfrom(soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    req[len_req] = 0;
     if ((id = is_ack(req)) > -1) {
         *ack_wait = lack_rm(*ack_wait, id, src_addr);
     } else if ((s_req = parse_req(req)).id > -1) {
@@ -55,8 +56,9 @@ void tchk_ack(lack* l, int soc, struct name* tab_of_addr) {
             if (tmp->ack.retry > 3) {
                 *l = lack_rm(*l, tmp->ack.req.id, tmp->ack.addr);
                 tmp = *l;
+            } else {
+                PCHK(gettimeofday(&tmp->ack.time, NULL));
             }
-            PCHK(gettimeofday(&tmp->ack.time, NULL));
         }
     }
 
@@ -87,7 +89,7 @@ int main(int argc, char const* argv[]) {
     bool goon = true;
     char str[120];
 
-    struct timeval timeout_loop = {1,0};
+    struct timeval timeout_loop = {1, 0};
     while (goon) {
         FD_ZERO(&ensemble);
         FD_SET(STDIN_FILENO, &ensemble);
