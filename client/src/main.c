@@ -246,6 +246,9 @@ void read_input(FILE *stream, int soc, int *id, lreq *reqs, struct tab_addrs *ro
 
 void read_network(int soc, int *id, lreq *reqs, lserv ignored, lserv *monitored, bool monitoring) {
     struct res res = receive_reply(soc, monitored, monitoring);
+    if (res.id == -1) {
+        return;
+    }
     lreq active_req = lreq_search(*reqs, res.id);
     if (lreq_empty(active_req)) {
         return;
