@@ -198,12 +198,13 @@ char * make_res(char *dest, struct req req, struct name *names, size_t *len_dest
         }
     }
 
-    MCHK(strcat(dest, "\0"));
     if (!found) {
         *len_dest += 2;
         MCHK(strcat(dest, FAIL));
         MCHK(strcat(dest, SEPARATOR));
     }
 
+    *len_dest += 1;
+    MCHK(strcat(dest, "\0"));
     return dest;
 }
