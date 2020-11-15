@@ -21,6 +21,8 @@
 #define TIMEOUT 2
 #define RESET_TIME 10
 
+#define PATHLEN 256
+
 /* Addrs */
 
 bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
@@ -70,15 +72,15 @@ void handle_request(char *input, int soc, int *id, lreq *reqs,
 void print_help();
 
 void load_reqfile(const char *path, int soc, int *id, lreq *reqs,
-                  struct tab_addrs *roots, lserv ignored, lserv suspicious,
+                  struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
                   lserv *monitored, bool *goon, bool *monitoring);
 
 void handle_command(char *command, int soc, int *id, lreq *reqs,
-                    struct tab_addrs *roots, lserv ignored, lserv suspicious,
-                    lserv *monitored, bool *goon, bool *monitoring);
+                    struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
+                    lserv *monitored, bool *goon, bool *monitoring) ;
 
 void read_input(FILE *stream, int soc, int *id, lreq *reqs,
-                struct tab_addrs *roots, lserv ignored, lserv suspicious,
+                struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
                 lserv *monitored, bool *goon, bool *monitoring);
 
 void read_network(int soc, int *id, lreq *reqs, lserv ignored, lserv *monitored,

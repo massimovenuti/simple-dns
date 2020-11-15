@@ -28,8 +28,8 @@ int get_index(lreq l, struct req req) {
 }
 
 bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
-    char ip1[IPLEN];
-    char ip2[IPLEN];
+    char ip1[LIP];
+    char ip2[LIP];
     if (a1.sin6_family != a2.sin6_family) {
         return false;
     }

@@ -17,8 +17,8 @@ void add_reply(struct server *s, struct timeval t) {
 }
 
 void afprint(FILE *stream, struct sockaddr_in6 addr) {
-    char ip[IPLEN];
-    char port[PORTLEN];
+    char ip[LIP];
+    char port[LPORT];
     sprintf(port, "%d", ntohs(addr.sin6_port));
     if (addr.sin6_family == AF_INET6) {
         inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(addr));
@@ -114,6 +114,11 @@ lserv lssearch(lserv l, struct sockaddr_in6 x) {
 }
 
 bool lsempty(lserv l) { return l == NULL; }
+
+lserv reset(lserv l) {
+    lsfree(l);
+    return lsnew();
+}
 
 void lsfprint(FILE *stream, lserv l) {
     if (lsempty(l)) {

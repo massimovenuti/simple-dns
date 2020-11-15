@@ -11,8 +11,8 @@
 #include <sys/types.h>
 
 #include "macro.h"
-#include "lreq.h"
 #include "time.h"
+#include "lreq.h"
 
 struct server {
     struct sockaddr_in6 addr;
@@ -53,6 +53,8 @@ lserv lssearch(lserv l, struct sockaddr_in6 x);
 bool lsbelong(struct sockaddr_in6 addr, lserv servs);
 
 bool lsempty(lserv l);
+
+lserv reset(lserv l);
 
 void lsfprint(FILE *stream, lserv l);
 

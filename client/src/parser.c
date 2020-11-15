@@ -25,10 +25,16 @@ struct tab_addrs parse_conf(const char *file_name) {
     struct tab_addrs res;
     FILE *file;
     MCHK(file = fopen(file_name, "r"));
-    char ip[IPLEN];
+    if (ferror(file)) {
+        perror("fopen(file_name, \"r\")");
+        exit(EXIT_FAILURE);
+    }
+    char ip[LIP];
     int port;
     int i;
-    for (i = 0; i < TABSIZE && fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF;
+    for (i = 0;
+         i < TABSIZE && fscanf(file, "%" STR(LIP) "[^|- ] | %" STR(LPORT) "d\n",
+                               ip, &port) != EOF;
          i++) {
         res.addrs[i] = convert(ip, port);
     }
@@ -45,16 +51,19 @@ void update_restime(struct res *res) {
 
 void parse_addrs(struct res *res, char *addrs) {
     char *token;
-    char name[NAMELEN];
-    char ip[IPLEN];
-    char port[PORTLEN];
+    char name[LNAME];
+    char ip[LIP];
+    char port[LPORT];
 
     token = strtok(addrs, SEPARATOR);
 
     int i;
     for (i = 0; i < TABSIZE && token != NULL; i++) {
-        if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
-            fprintf(stderr, "Server result incorrect\n");
+        if (sscanf(token,
+                   " %" STR(LNAME) "[^, ] , %" STR(LIP) "[^, ] , %" STR(
+                       LPORT) "[^, ] ",
+                   name, ip, port) != 3) {
+            fprintf(stderr, "incorrect server result\n");
             exit(EXIT_FAILURE);
         }
         if (i == 0) {
@@ -68,12 +77,15 @@ void parse_addrs(struct res *res, char *addrs) {
 
 struct res parse_res(char *res) {
     struct res s_res;
-    char addrs[RESLEN];
+    char addrs[LRES];
     *addrs = '\0';
 
-    if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id,
-               &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name,
-               &s_res.code, addrs) < 4) {
+    if (sscanf(res,
+               " %" STR(LID) "d | %" STR(LTIME) "ld,%" STR(LTIME) "ld | %" STR(
+                   LNAME) "[^|- ] | %" STR(LCODE) "d | "
+                                                  "%" STR(LRES) "s",
+               &s_res.id, &s_res.time.tv_sec, &s_res.time.tv_usec,
+               s_res.req_name, &s_res.code, addrs) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         s_res.id = -1;
         return s_res;

@@ -16,11 +16,12 @@
 
 #include "macro.h"
 
-#define NAMELEN 256
-#define IPLEN 140
-#define PORTLEN 10
 #define TABSIZE 100
-#define REQLEN 512
+
+#define LNAME 256
+#define LIP 140
+#define LPORT 10
+#define LREQ 512
 
 struct tab_addrs {
     struct sockaddr_in6 addrs[TABSIZE];
@@ -29,7 +30,7 @@ struct tab_addrs {
 
 struct req {
     int id;
-    char name[NAMELEN];
+    char name[LNAME];
     struct tab_addrs dest_addrs;
     struct timeval t;
     int index;
