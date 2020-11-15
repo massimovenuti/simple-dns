@@ -54,7 +54,7 @@ function test_req() {
     coproc serv ( $1 $2 $3 )
     sleep 1
     echo "1|123,456|toto.fr" | nc -u4 -W 1 127.0.0.1 $2 &> $4/res.txt || FAIL=1
-    echo "ack|1" | nc -u4 -w 5 127.0.0.1 $2 &>> $4/res.txt || FAIL=1
+    echo "ack|1" | nc -u4 -p 50000 -w 5 127.0.0.1 $2 &>> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -63,8 +63,8 @@ function test_req() {
 
     coproc serv ( $1 $2 $3 )
     sleep 1
-    echo "1|123,456|toto.fr" | nc -u6 -W 1 ::1 $2 > $4/res.txt || FAIL=1
-    echo "ack|1" | nc -u6 -w 5 ::1 $2 &>> $4/res.txt || FAIL=1
+    echo "1|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 > $4/res.txt || FAIL=1
+    echo "ack|1" | nc -u6 -p 50000 -w 5 ::1 $2 &>> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -73,7 +73,7 @@ function test_req() {
 
     coproc serv ( $1 $2 $3 &> /dev/null )
     sleep 1
-    echo "Oh, des regrets, des regrets, des regrets" | nc -u6 -w 5 ::1 $2 &> $4/res.txt || FAIL=1
+    echo "Oh, des regrets, des regrets, des regrets" | nc -u6 -p 50000 -w 5 ::1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -83,7 +83,7 @@ function test_req() {
 
     coproc serv ( $1 $2 $3 )
     sleep 1
-    echo "1|123,456|toto.fr" |  nc -u6 -W 2 ::1 $2 &> $4/res.txt || FAIL=1
+    echo "1|123,456|toto.fr" |  nc -u6 -p 50000 -w 10 ::1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -102,8 +102,8 @@ function test_charge() {
     sleep 1
     for i in {1..1000}
     do
-        echo "1|123,456|toto.fr" | nc -u -W 1 ::1 $2 &> /dev/null || FAIL=1
-        echo "ack|1" | nc -u6 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
+        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null || FAIL=1
+        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
     done
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
@@ -114,13 +114,14 @@ function test_charge() {
 function test_memoir() {
     debut_test 6 "Test de memoir"
     local FAIL=0
-    coproc serv ( valgrind --leak-check=full $1 $2 $3 &> /dev/null )
+    coproc serv ( valgrind --leak-check=full --undef-value-errors=no --error-exitcode=1 $1 $2 $3 &> /dev/null )
     sleep 1
     for i in {1..1000}
     do
-        echo "1|123,456|toto.fr" | nc -u -W 1 ::1 $2 &> /dev/null || FAIL=1
-        echo "ack|1" | nc -u6 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
+        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null || FAIL=1
+        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
     done
+    sleep 1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
     test $FAIL -eq 0 || fail "Test de memoir"

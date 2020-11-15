@@ -315,9 +315,10 @@ int main(int argc, char const *argv[]) {
                      &monitored, &goon, &monitoring);
     }
 
+    fd_set ensemble;
+    struct timeval timeout_loop;
     while (goon) {
-        fd_set ensemble;
-        struct timeval timeout_loop = new_timeval(1, 0);
+        timeout_loop = new_timeval(1, 0);
         FD_ZERO(&ensemble);
         FD_SET(STDIN_FILENO, &ensemble);
         FD_SET(soc, &ensemble);
