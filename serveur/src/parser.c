@@ -16,6 +16,21 @@ struct tab_names new_tab_names() {
     return tn;
 }
 
+struct server new_server(char *ip, char *port) {
+    struct server res;
+    strcpy(res.ip, ip);
+    strcpy(res.port, port);
+    return res;
+}
+
+struct name new_name(char *name, struct tab_servers servs) {
+    struct name res;
+    strcpy(res.name, name);
+    res.tab_servs = servs;
+    return res;
+}
+
+/*
 struct server new_server() {
     struct server res;
     *res.ip = '\0';
@@ -30,6 +45,8 @@ struct name new_name() {
     return n;
 }
 
+*/
+
 void free_tab_servers(struct tab_servers *s) {
     free(s->servs);
 }
@@ -41,6 +58,27 @@ void free_tab_names(struct tab_names *n) {
     free(n->names);
 }
 
+void add_name(struct tab_names *tn, struct name n) {
+    if (tn == NULL) {
+        return;
+    }
+    tn->names = inctab(tn->names, tn->len + 1, &tn->max_len, sizeof(struct name), INCREASE_COEF);
+    tn->names[tn->len] = n;
+    tn->names[tn->len + 1] = new_name("\0", new_tab_servers());
+    tn->len += 1;
+}
+
+void add_server(struct tab_servers *ts, struct server s) {
+    if (ts == NULL) {
+        return;
+    }
+    ts->servs = inctab(ts->servs, ts->len + 1, &ts->max_len, sizeof(struct server), INCREASE_COEF);
+    ts->servs[ts->len] = s;
+    ts->servs[ts->len + 1] = new_server("\0", "\0");
+    ts->len += 1;
+}
+
+/*
 void add_name(struct tab_names *n, char *name, struct tab_servers tab_servs) {
     if (n == NULL) {
         return;
@@ -62,6 +100,7 @@ void add_server(struct tab_servers *s, char *ip, char *port) {
     s->servs[s->len + 1] = new_server();
     s->len++;
 }
+*/
 
 int search_name(struct tab_names n, char *name) {
     for (int tmp = 0; tmp < n.len; tmp++) {
@@ -116,11 +155,11 @@ struct tab_names parse_conf(const char *file_name) {
     while ((code = fscanf(file, "%[^|- ] | %140[^|- ] | %10s\n", name, ip, port)) == 3 && code != EOF) {
         int index = search_name(n, name);
         if (index >= 0) {
-            add_server(&n.names[index].tab_servs, ip, port);
+            add_server(&n.names[index].tab_servs, new_server(ip, port));
         } else {
             struct tab_servers new_ts = new_tab_servers();
-            add_server(&new_ts, ip, port);
-            add_name(&n, name, new_ts);
+            add_server(&new_ts, new_server(ip, port));
+            add_name(&n, new_name(name, new_ts));
         }
     }
 

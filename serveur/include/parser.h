@@ -54,13 +54,9 @@ void free_tab_servers(struct tab_servers *s);
 
 void free_tab_names(struct tab_names *n);
 
-bool last_name(struct name n);      /* /!\ inutile */
+void add_name(struct tab_names *tn, struct name n);
 
-bool last_serv(struct server s);    /* /!\ inutile */
-
-void add_name(struct tab_names *n, char *name, struct tab_servers tab_servs);
-
-void add_server(struct tab_servers *s, char *ip, char *port);
+void add_server(struct tab_servers *ts, struct server s);
 
 int search_name(struct tab_names n, char *name);
 
