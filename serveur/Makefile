@@ -26,6 +26,9 @@ $(B_REP)$(EXE) : $(OBJ)
 	mkdir -p $(O_REP)
 	$(CC) $(CFLAGS) $(INCLUDEFLAGS) -o $(O_REP)$@ -c $<
 
+test: ./test/testUbuntu.sh
+	./test/testUbuntu.sh
+
 clean :
 	rm -f $(O_REP)*
 	rm -f $(B_REP)*
