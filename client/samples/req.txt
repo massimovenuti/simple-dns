@@ -1,4 +1,3 @@
-!monitoring
 toto.fr
 riri.toto.fr
 fifi.fr

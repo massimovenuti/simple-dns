@@ -48,7 +48,7 @@ function test_run() {
 function test_req() {
     debut_test 4 "Test de requet"
     
-    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060" > $4/wait.txt
+    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060\0" > $4/wait.txt
 
     local FAIL=0
     coproc serv ( $1 $2 $3 )
@@ -79,7 +79,7 @@ function test_req() {
 
     test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requet invalide"
 
-    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060" >> $4/wait.txt
+    printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060\0" >> $4/wait.txt
 
     coproc serv ( $1 $2 $3 )
     sleep 1
