@@ -25,6 +25,10 @@
         }                  \
     } while (0)
 
+#define str(s) #s
+
+#define STR(s) str(s)
+
 #define RESET "\033[0m"
 #define BLACK "\033[30m"              /* Black */
 #define RED "\033[31m"                /* Red */
@@ -44,5 +48,6 @@
 #define BOLDWHITE "\033[1m\033[37m"   /* Bold White */
 
 #define NEWLINE "\n"
+#define TAB "\t"
 
 #endif

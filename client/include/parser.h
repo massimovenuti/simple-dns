@@ -9,20 +9,18 @@
 
 #define INCREASE_COEF 3
 
-#define TIMELEN 30
-#define RESLEN 724
-#define CODELEN 2
-#define IDLEN 129
-#define IPLEN 140
-#define PORTLEN 10
+#define LTIME 30
+#define LRES 724
+#define LCODE 2
+#define LID 32
 #define SEPARATOR "|"
 
 struct res {
     int id;
     struct timeval time;
-    char req_name[100];
+    char req_name[LREQ];
     int code;
-    char name[100];
+    char name[LNAME];
     struct tab_addrs addrs;
 };
 

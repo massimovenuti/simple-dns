@@ -4,11 +4,11 @@ void monitor_timeout(char *req, struct sockaddr_in6 addr, bool first_timeout) {
     if (first_timeout) {
         fprintf(stderr, YELLOW "%s" NEWLINE, req);
         afprint(stderr, addr);
-        fprintf(stderr, " Suspicious");
+        fprintf(stderr, " suspicious");
     } else {
         fprintf(stderr, RED "%s" NEWLINE, req);
         afprint(stderr, addr);
-        fprintf(stderr, " Timeout");
+        fprintf(stderr, " timeout");
     }
     fprintf(stderr, RESET NEWLINE);
 }
@@ -86,9 +86,9 @@ void check_timeout(int soc, struct timeval *reset_t, lreq *reqs,
         if (timeout(tmp->req.t, TIMEOUT)) {
             if (!handle_timeout(soc, &tmp->req, addr, reqs, ignored, suspicious,
                                 monitored, monitoring)) {
-                fprintf(stdout,
-                        NEWLINE BOLDRED "%s Timeout" RESET NEWLINE NEWLINE,
-                        tmp->req.name);
+                fprintf(stdout, BOLDRED);
+                fprintf(stdout, "%s TIMEOUT", tmp->req.name);
+                fprintf(stdout, RESET NEWLINE);
                 *reqs = lrrm(*reqs, tmp->req.id);
                 tmp = *reqs;
             }
@@ -108,11 +108,11 @@ void send_ack(int soc, int id, struct sockaddr_in6 addr) {
 }
 
 struct res receive_reply(int soc, lserv *monitored, bool monitoring) {
-    char str_res[REQLEN];
+    char str_res[LREQ];
     struct sockaddr_in6 src_addr;
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_res;
-    PCHK(len_res = recvfrom(soc, str_res, REQLEN, 0,
+    PCHK(len_res = recvfrom(soc, str_res, LREQ, 0,
                             (struct sockaddr *)&src_addr, &len_addr));
     struct res s_res = parse_res(str_res);
 
@@ -140,23 +140,26 @@ void handle_reply(int soc, int *id, lreq *reqs, struct req *req, struct res res,
         update_req(reqs, req, *id, res.addrs);
         if (send_request(soc, req, ignored, monitored, monitoring)) {
             *id += 1;
+        } else {
+            fprintf(stderr, "servers unreachable, see \'!reset\'" NEWLINE);
+            *reqs = lrrm(*reqs, req->id);
         }
     }
 }
 
 int reqtostr(struct req s_req, char *str_req) {
     int len;
-    if ((len = snprintf(str_req, REQLEN, "%d|%ld,%ld|%s", s_req.id,
+    if ((len = snprintf(str_req, LREQ, "%d|%ld,%ld|%s", s_req.id,
                         s_req.t.tv_sec, s_req.t.tv_usec, s_req.name)) >
-        REQLEN - 1) {
-        fprintf(stderr, "Request too long" NEWLINE);
+        LREQ - 1) {
+        fprintf(stderr, "request too long" NEWLINE);
     }
     return len;
 }
 
 bool send_request(int soc, struct req *s_req, lserv ignored, lserv *monitored,
                   bool monitoring) {
-    char str_req[REQLEN];
+    char str_req[LREQ];
     PCHK(gettimeofday(&s_req->t, NULL));
     int req_len = reqtostr(*s_req, str_req);
     bool sent = false;
@@ -186,57 +189,68 @@ void handle_request(char *input, int soc, int *id, lreq *reqs,
     if (send_request(soc, req, ignored, monitored, monitoring)) {
         *id += 1;
     } else {
-        lsfree(ignored); /* /!\ */
-        ignored = lsnew(); /* /!\ */
+        fprintf(stderr, "servers unreachable, see \'!reset\'" NEWLINE);
+        *reqs = lrrm(*reqs, req->id);
+        // reset(ignored)
     }
 }
 
 void print_help() {
-    fprintf(stderr, "usage : !stop" NEWLINE);
-    /* /!\ à compléter */
+    fprintf(stderr, "usage :" NEWLINE);
+    fprintf(stderr, TAB "!stop" NEWLINE);
+    fprintf(stderr, TAB "!ignored" NEWLINE);
+    fprintf(stderr, TAB "!monitoring" NEWLINE);
+    fprintf(stderr, TAB "!reset" NEWLINE);
+    fprintf(stderr, TAB "!loadconf" NEWLINE);
+    fprintf(stderr, TAB "!loadreq" NEWLINE);
+    fprintf(stderr, TAB "!status" NEWLINE);
+}
+
+void scan_path(char *path) {
+    printf(">");
+    fscanf(stdin, "%" STR(PATHLEN) "s", path);
 }
 
 void handle_command(char *command, int soc, int *id, lreq *reqs,
-                    struct tab_addrs *roots, lserv ignored, lserv suspicious,
+                    struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
                     lserv *monitored, bool *goon, bool *monitoring) {
-    char path[NAMELEN];
+    char path[PATHLEN];
     if (!strcmp(command, "!stop")) {
         *goon = false;
     } else if (!strcmp(command, "!ignored")) {
-        lsfprint(stderr, ignored);
-    } else if (sscanf(command, "!loadroot %s\n", path)) { /* /!\ */
-        *roots = parse_conf(path);
+        lsfprint(stderr, *ignored);
     } else if (!strcmp(command, "!help")) {
         print_help();
-    } else if (sscanf(command, "!loadconf %s\n", path) == 1) { /* /!\ */
+    } else if (!strcmp(command, "!loadconf")) { /* /!\ */
+        scan_path(path);
+        *roots = parse_conf(path);
+    } else if (!strcmp(command, "!loadreq")) { /* /!\ */
+        scan_path(path);
         load_reqfile(path, soc, id, reqs, roots, ignored, suspicious, monitored,
                      goon, monitoring);
     } else if (!strcmp(command, "!reset")) {
-        lsfree(ignored); /* /!\ */
-        lsfree(*monitored);
-        lsfree(suspicious); /* /!\ */
-        ignored = lsnew(); /* /!\ */
-        *monitored = lsnew();
-        suspicious = lsnew(); /* /!\ */
+        fprintf(stderr, "servers succefully reset" NEWLINE);
+        *ignored = reset(*ignored);       /* /!\ */
+        *monitored = reset(*monitored);   /* /!\ */
+        *suspicious = reset(*suspicious); /* /!\ */
     } else if (!strcmp(command, "!monitoring")) {
         *monitoring = !*monitoring;
         if (*monitoring) {
-            fprintf(stderr, "monitoring: enabled\n");
+            fprintf(stderr, "monitoring enabled" NEWLINE);
         } else {
-            fprintf(stderr, "monitoring: disabled\n");
-            lsfree(*monitored);
+            fprintf(stderr, "monitoring disabled" NEWLINE);
+            *monitored = reset(*monitored);
         }
     } else if (!strcmp(command, "!status")) {
-        fprintf(stderr, NEWLINE "%d ignored servers" NEWLINE, lslen(ignored));
-        lsfprint(stderr, ignored);
+        fprintf(stderr, "%d ignored servers" NEWLINE, lslen(*ignored));
+        lsfprint(stderr, *ignored);
         if (*monitoring) {
-            fprintf(stderr, NEWLINE "%d servers information" NEWLINE,
-                    lslen(*monitored));
+            fprintf(stderr, "%d servers information", lslen(*monitored));
+            fprintf(stderr, NEWLINE);
             lsfprint(stderr, *monitored);
         } else {
-            fprintf(stderr, NEWLINE
-                    "No information about servers. See \'!monitoring\'." NEWLINE
-                        NEWLINE);
+            fprintf(stderr, "no servers informations, see \'!monitoring\'");
+            fprintf(stderr, NEWLINE);
         }
     } else {
         fprintf(stderr, "!: invalid command \'%s\'" NEWLINE, command + 1);
@@ -245,17 +259,18 @@ void handle_command(char *command, int soc, int *id, lreq *reqs,
 }
 
 void read_input(FILE *stream, int soc, int *id, lreq *reqs,
-                struct tab_addrs *roots, lserv ignored, lserv suspicious,
+                struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
                 lserv *monitored, bool *goon, bool *monitoring) {
-    char input[NAMELEN];
-    if (fscanf(stream, "%s", input) == EOF) {
+    char input[LNAME];
+    if (fscanf(stream, "%" STR(LNAME) "s", input) == EOF) {
         if (ferror(stream)) {
-            perror("fscanf(req_file,\"%s\", name)");
+            perror("fscanf(stream,\"%\"" STR(LNAME) "\"s\", input)");
             exit(EXIT_FAILURE);
         }
+        return;
     }
     if (*input != '!') {
-        handle_request(input, soc, id, reqs, *roots, ignored, monitored,
+        handle_request(input, soc, id, reqs, *roots, *ignored, monitored,
                        *monitoring);
     } else {
         handle_command(input, soc, id, reqs, roots, ignored, suspicious,
@@ -277,14 +292,14 @@ void read_network(int soc, int *id, lreq *reqs, lserv ignored, lserv *monitored,
         handle_reply(soc, id, reqs, &active_req->req, res, ignored, monitored,
                      monitoring);
     } else {
-        fprintf(stdout, BOLDRED "%s Not found" RESET NEWLINE NEWLINE,
+        fprintf(stdout, BOLDRED "%s NOT FOUND" RESET NEWLINE NEWLINE,
                 active_req->req.name);
         *reqs = lrrm(*reqs, res.id);
     }
 }
 
 void load_reqfile(const char *path, int soc, int *id, lreq *reqs,
-                  struct tab_addrs *roots, lserv ignored, lserv suspicious,
+                  struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
                   lserv *monitored, bool *goon, bool *monitoring) {
     FILE *req_file;
     MCHK(req_file = fopen(path, "r"));
@@ -297,7 +312,7 @@ void load_reqfile(const char *path, int soc, int *id, lreq *reqs,
 
 int main(int argc, char const *argv[]) {
     if (argc < 2 || argc > 3) {
-        fprintf(stderr, "Usage: %s <config file path> [<reqs path>]" NEWLINE,
+        fprintf(stderr, "usage: %s <config file path> [<reqs path>]" NEWLINE,
                 argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -311,7 +326,7 @@ int main(int argc, char const *argv[]) {
     int id = 0;
 
     if (argc == 3) {
-        load_reqfile(argv[2], soc, &id, &reqs, &roots, ignored, suspicious,
+        load_reqfile(argv[2], soc, &id, &reqs, &roots, &ignored, &suspicious,
                      &monitored, &goon, &monitoring);
     }
 
@@ -324,7 +339,7 @@ int main(int argc, char const *argv[]) {
         FD_SET(soc, &ensemble);
         PCHK(select(soc + 1, &ensemble, NULL, NULL, &timeout_loop));
         if (FD_ISSET(STDIN_FILENO, &ensemble)) {
-            read_input(stdin, soc, &id, &reqs, &roots, ignored, suspicious,
+            read_input(stdin, soc, &id, &reqs, &roots, &ignored, &suspicious,
                        &monitored, &goon, &monitoring);
         }
         if (FD_ISSET(soc, &ensemble)) {
