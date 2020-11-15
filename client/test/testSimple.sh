@@ -37,11 +37,22 @@ function test_bad_file() {
 function test_run() {
     debut_test 3 "Test d'execution"
     local FAIL=0
-    coproc client ( $1 $2 || FAIL=1 )
+    coproc client ( $1 $2 )
     sleep 1
     echo !stop >&"${client[1]}"
-    wait ${client_PID}
+    wait ${client_PID} || FAIL=1
     test $FAIL -eq 0 || fail "execution simple"
+    fin_test
+}
+
+function test_memoir() {
+    debut_test 4 "Test memoir"
+    local FAIL=0
+    coproc client (valgrind --leak-check=full --undef-value-errors=no --error-exitcode=1 $1 $2 &> /dev/null )
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "Test memoir"
     fin_test
 }
 
@@ -54,7 +65,7 @@ mkdir $TMPDIR
 test_bad_arg $EXE
 test_bad_file $EXE
 test_run $EXE $CONF
-
+test_memoir  $EXE $CONF
 
 rmdir $TMPDIR
 

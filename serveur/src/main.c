@@ -89,8 +89,10 @@ int main(int argc, char const* argv[]) {
     bool goon = true;
     char str[120];
 
-    struct timeval timeout_loop = {1, 0};
+    struct timeval timeout_loop;
     while (goon) {
+        timeout_loop.tv_sec = 1;
+        timeout_loop.tv_usec = 0;
         FD_ZERO(&ensemble);
         FD_SET(STDIN_FILENO, &ensemble);
         FD_SET(soc, &ensemble);
