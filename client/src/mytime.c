@@ -1,4 +1,4 @@
-#include "time.h"
+#include "mytime.h"
 
 struct timeval new_timeval(time_t sec, time_t usec) {
     struct timeval t = {sec, usec};

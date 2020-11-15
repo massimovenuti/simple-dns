@@ -16,7 +16,7 @@
 #include "lserv.h"
 #include "macro.h"
 #include "parser.h"
-#include "time.h"
+#include "mytime.h"
 
 #define TIMEOUT 2
 #define RESET_TIME 10

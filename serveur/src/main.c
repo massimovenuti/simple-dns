@@ -6,11 +6,11 @@
  * @param arg 
  * @return void* 
  */
-void processes_request(int soc, struct name* tab_of_addr, lack* ack_wait) {
+void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait) {
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
-    size_t alloc_mem = RESLEN * sizeof(char);
-    char* res = malloc(alloc_mem);
+    size_t max_len_res = REQLEN * sizeof(char);
+    char* res = malloc(max_len_res);
     socklen_t len_addr = sizeof(struct sockaddr_in6);
     ssize_t len_req;
     size_t len_res;
@@ -23,7 +23,7 @@ void processes_request(int soc, struct name* tab_of_addr, lack* ack_wait) {
         *ack_wait = lack_rm(*ack_wait, id, src_addr);
     } else if ((s_req = parse_req(req)).id > -1) {
         *ack_wait = lack_add(*ack_wait, s_req, src_addr);
-        res = make_res(res, s_req, tab_of_addr, &len_res, len_req, &alloc_mem);
+        res = make_res(res, s_req, tab_of_addr, &len_res, len_req, &max_len_res);
         PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
     }
     free(res);
@@ -38,7 +38,7 @@ bool timeout(struct ack a) {
     return timercmp(&cur_t, &a.time, >=);
 }
 
-void tchk_ack(lack* l, int soc, struct name* tab_of_addr) {
+void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr) {
     if (lack_empty(*l)) {
         return;
     }
@@ -81,7 +81,7 @@ int main(int argc, char const* argv[]) {
 
     PCHK(bind(soc, (struct sockaddr*)&listen_addr_v6, sizeof(listen_addr_v6)));
 
-    struct name* tab = parse_conf(argv[2]);
+    struct tab_names tab = parse_conf(argv[2]);
 
     lack ack_wait = lack_new();
 
@@ -106,7 +106,7 @@ int main(int argc, char const* argv[]) {
             scanf("%s", str);
             if (!strcmp(str, "stop")) {
                 PCHK(close(soc));
-                free_names(tab);
+                free_tab_names(&tab);
                 lack_destroy(ack_wait);
                 exit(EXIT_SUCCESS);
             }

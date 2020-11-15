@@ -20,8 +20,8 @@ function fail () # erreur
 
 function test_bad_arg() {
     debut_test 1 "Test du nombre d'arguments"
-    $1 |& grep "Usage:" > /dev/null || fail "Nombre d'argument invalide (0)"
-    $1 riri loulou fifi zaza |& grep "Usage:" > /dev/null || fail "Nombre d'argument invalide (4)"
+    $1 |& grep "usage:" > /dev/null || fail "Nombre d'argument invalide (0)"
+    $1 riri loulou fifi zaza |& grep "usage:" > /dev/null || fail "Nombre d'argument invalide (4)"
     fin_test
 }
 

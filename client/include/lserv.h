@@ -11,7 +11,7 @@
 #include <sys/types.h>
 
 #include "macro.h"
-#include "time.h"
+#include "mytime.h"
 #include "lreq.h"
 
 struct server {

@@ -26,11 +26,21 @@ struct server {
     char port[PORTLEN];
 };
 
+struct tab_servers {
+    struct server *servs;
+    int max_len;
+    int len;
+};
+
 struct name {
     char name[NAMELEN];
-    struct server *servers;
-    int nb_servers;
-    int max_servers;
+    struct tab_servers tab_servs;
+};
+
+struct tab_names {
+    struct name *names;
+    int len;
+    int max_len;
 };
 
 struct req {
@@ -39,20 +49,36 @@ struct req {
     char name[NAMELEN];
 };
 
-void init_names(struct name *names, int start, int end);
+struct tab_servers new_tab_servers();
 
-void free_names(struct name *names);
+struct tab_names new_tab_names();
+
+struct server new_server();
+
+struct name new_name();
+
+void free_tab_servers(struct tab_servers *s);
+
+void free_tab_names(struct tab_names *n);
+
+void add_name(struct tab_names *tn, struct name n);
+
+void add_server(struct tab_servers *ts, struct server s);
+
+int search_name(struct tab_names n, char *name);
+
+void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef);
+
+char *incstr(char *dest, size_t len, size_t *max_len, int coef);
 
 bool compare(char *s1, char *s2);
 
-struct name *parse_conf(const char *file_name);
+struct tab_names parse_conf(const char *file_name);
 
 struct req parse_req(char *src);
 
 int is_ack(char str[]);
 
-bool increase_memsize(char *dest, size_t *size_dest, size_t size_src);
-
-char *make_res(char *dest, struct req req, struct name *names, size_t *len_dest, size_t len_src, size_t *max_len_dest);
+char *make_res(char *dest, struct req req, struct tab_names n, size_t *len_dest, size_t len_src, size_t *max_len_dest);
 
 #endif

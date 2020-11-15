@@ -21,7 +21,7 @@ function fail () # erreur
 function test_resolve() {
     debut_test 1 "Test de resolution"
     python3 $1 1 | grep "riri.toto.fr ::1:8080" > /dev/null || fail "Demande de resolution simple"
-    python3 $1 2 | grep "fifi.fr Not found" > /dev/null || fail "Demande de resolution simple"
+    python3 $1 2 | grep "fifi.fr NOT FOUND" > /dev/null || fail "Demande de resolution simple"
     python3 $1 3 | grep "riri.toto.fr ::1:8080" > /dev/null || fail "Demande de resolution avec fichier"
     fin_test 
 }
@@ -34,19 +34,19 @@ function test_roud_robin() {
 
 function test_timeout() {
     debut_test 3 "Test du timeout"
-    python3 $1 5 |& grep "riri.toto.fr Timeout" > /dev/null || fail "timeout"
+    python3 $1 5 |& grep "riri.toto.fr TIMEOUT" > /dev/null || fail "timeout"
     fin_test 
 }
 
 function test_stop_start() {
-    debut_test 4 "Test de repise apret ansident"
-    python3 $1 6 |& grep "riri.toto.fr Timeout\|riri.toto.fr ::1:8080" > /dev/null || fail "repise apret ansident"
+    debut_test 4 "Test de reprise après incident"
+    python3 $1 6 |& grep "riri.toto.fr TIMEOUT\|riri.toto.fr ::1:8080" > /dev/null || fail "reprise après incident"
     fin_test 
 }
 
 function test_memoir() {
-    debut_test 5 "Test memoir"
-    python3 $1 7 &> /dev/null || fail "Test memoir"
+    debut_test 5 "Test mémoire"
+    python3 $1 7 &> /dev/null || fail "Test mémoire"
     fin_test 
 }
 

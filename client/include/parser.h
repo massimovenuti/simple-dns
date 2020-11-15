@@ -5,7 +5,7 @@
 
 #include "lreq.h"
 #include "macro.h"
-#include "time.h"
+#include "mytime.h"
 
 #define INCREASE_COEF 3
 
@@ -30,7 +30,7 @@ struct tab_addrs parse_conf(const char *file_name);
 
 void update_restime(struct res *res);
 
-void parse_addrs(struct res *res, char *addrs);
+void parse_addrs(struct res *res, char *addrs) ;
 
 struct res parse_res(char *res);
 
