@@ -7,12 +7,15 @@ serveur-build:
 	(cd serveur; make)
 
 test: test-client test-serveur
+	echo "Test Global"
 	./test/test.sh
 
-test-client:
+test-client: client-build
+	echo "Test Client"
 	(cd client; make test)
 
-test-serveur:
+test-serveur: serveur-build
+	echo "Test Serveur"
 	(cd serveur; make test)
 
 clean:
