@@ -28,11 +28,8 @@ struct tab_addrs parse_conf(const char *file_name) {
     char ip[IPLEN];
     int port;
     int i;
-    for (i = 0; fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF; i++) {
-        if (i >= TABSIZE) {
-            // raler
-            break;
-        }
+    for (i = 0; i < TABSIZE && fscanf(file, "%[^|- ] | %d\n", ip, &port) != EOF;
+         i++) {
         res.addrs[i] = convert(ip, port);
     }
     res.len = i;
@@ -40,51 +37,49 @@ struct tab_addrs parse_conf(const char *file_name) {
     return res;
 }
 
+void update_restime(struct res *res) {
+    struct timeval t;
+    PCHK(gettimeofday(&t, NULL));
+    res->time = op_timeval(t, res->time, '-');
+}
+
+void parse_addrs(struct res *res, char *addrs) {
+    char *token;
+    char name[NAMELEN];
+    char ip[IPLEN];
+    char port[PORTLEN];
+
+    token = strtok(addrs, SEPARATOR);
+
+    int i;
+    for (i = 0; i < TABSIZE && token != NULL; i++) {
+        if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) != 3) {
+            fprintf(stderr, "Server result incorrect\n");
+            exit(EXIT_FAILURE);
+        }
+        if (i == 0) {
+            MCHK(strcpy(res->name, name));
+        }
+        res->addrs.addrs[i] = convert(ip, atoi(port));
+        token = strtok(NULL, SEPARATOR);
+    }
+    res->addrs.len = i;
+}
+
 struct res parse_res(char *res) {
     struct res s_res;
-    char tab_addrs[1024];  // à modifier
-    *tab_addrs = '\0';
+    char addrs[RESLEN];
+    *addrs = '\0';
 
     if (sscanf(res, " %d | %ld,%ld | %[^|- ] | %d | %s", &s_res.id,
                &s_res.time.tv_sec, &s_res.time.tv_usec, s_res.req_name,
-               &s_res.code, tab_addrs) < 4) {
+               &s_res.code, addrs) < 4) {
         fprintf(stderr, "Incorrect server result\n");
         s_res.id = -1;
         return s_res;
     }
 
-    struct timeval t;
-    PCHK(gettimeofday(&t, NULL));
-
-    s_res.time = op_timeval(t, s_res.time, '-');
-
-    char *token;
-    char name[NAMELEN];
-    char ip[IPLEN];
-    char port[PORTLEN];
-    int nb_addrs = 0;
-    bool first = true;
-
-    token = strtok(tab_addrs, SEPARATOR);
-
-    if (token == NULL) {
-        s_res.addrs.len = 0;
-    } else {
-        do {
-            if (sscanf(token, " %[^, ] , %[^, ] , %[^, ] ", name, ip, port) !=
-                3) {
-                fprintf(stderr, "Server result incorrect\n");
-                exit(EXIT_FAILURE);
-            }
-            if (first) {
-                MCHK(strcpy(s_res.name, name));
-                first = false;
-            }
-            s_res.addrs.addrs[nb_addrs] = convert(ip, atoi(port));
-            nb_addrs++;
-            token = strtok(NULL, SEPARATOR);
-        } while (nb_addrs < TABSIZE && token != NULL);
-        s_res.addrs.len = nb_addrs;
-    }
+    parse_addrs(&s_res, addrs);
+    update_restime(&s_res);
     return s_res;
 }

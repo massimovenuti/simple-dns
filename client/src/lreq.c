@@ -1,4 +1,4 @@
-#include "req.h"
+#include "lreq.h"
 
 struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {
     struct req req;
@@ -19,12 +19,38 @@ int get_index(lreq l, struct req req) {
     int index = 0;
     lreq tmp;
     for (tmp = l; !lrempty(tmp); tmp = tmp->next) {
-        if (req.id != tmp->req.id && belong(req.dest_addrs.addrs[0], tmp->req.dest_addrs) &&
+        if (belong(req.dest_addrs.addrs[0], tmp->req.dest_addrs) &&
             tmp->req.index + 1 > index) {
             index = tmp->req.index + 1;
         }
     }
     return index;
+}
+
+bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
+    char ip1[IPLEN];
+    char ip2[IPLEN];
+    if (a1.sin6_family != a2.sin6_family) {
+        return false;
+    }
+    if (a1.sin6_family == AF_INET6) {
+        inet_ntop(AF_INET6, &a1.sin6_addr, ip1, sizeof(a1));
+        inet_ntop(AF_INET6, &a2.sin6_addr, ip2, sizeof(a2));
+    } else {
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a1))->sin_addr, ip1,
+                  sizeof(a1));
+        inet_ntop(AF_INET, &((struct sockaddr_in *)(&a2))->sin_addr, ip2,
+                  sizeof(a2));
+    }
+    return (a1.sin6_port == a2.sin6_port) && !strcmp(ip1, ip2);
+}
+
+bool belong(struct sockaddr_in6 addr, struct tab_addrs addrs) {
+    bool found;
+    for (int i = 0; i < addrs.len && !found; i++) {
+        found = addrcmp(addr, addrs.addrs[i]);
+    }
+    return found;
 }
 
 lreq lrnew() { return NULL; }

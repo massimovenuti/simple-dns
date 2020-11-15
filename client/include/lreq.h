@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/select.h>
@@ -11,11 +12,20 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
-#include "addr.h"
 #include "macro.h"
 
 #define NAMELEN 256
+#define IPLEN 140
+#define PORTLEN 10
+#define TABSIZE 100
+#define REQLEN 512
+
+struct tab_addrs {
+    struct sockaddr_in6 addrs[TABSIZE];
+    int len;
+};
 
 struct req {
     int id;
@@ -35,6 +45,10 @@ struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
 void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs);
 
 int get_index(lreq l, struct req req);
+
+bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
+
+bool belong(struct sockaddr_in6 addr, struct tab_addrs addrs);
 
 lreq lrnew();
 

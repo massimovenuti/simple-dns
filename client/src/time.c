@@ -5,6 +5,21 @@ struct timeval new_timeval(time_t sec, time_t usec) {
     return t;
 }
 
+struct timeval new_cooldown(int sec, int usec) {
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    t.tv_sec += sec;
+    t.tv_usec += usec;
+    return t;
+}
+
+bool timeout(struct timeval t, int time) {
+    struct timeval cur_t;
+    PCHK(gettimeofday(&cur_t, NULL));
+    cur_t.tv_sec -= time;
+    return timercmp(&cur_t, &t, >=);
+}
+
 float get_timevalue(struct timeval t) {
     return t.tv_sec + (t.tv_usec * pow(10, -6));
 }
