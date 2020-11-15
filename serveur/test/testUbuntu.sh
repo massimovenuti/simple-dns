@@ -83,7 +83,7 @@ function test_req() {
 
     coproc serv ( $1 $2 $3 )
     sleep 1
-    echo "1|123,456|toto.fr" |  nc -u6 -p 50000 -w 10 ::1 $2 &> $4/res.txt || FAIL=1
+    echo "1|123,456|toto.fr" |  nc -u6 -p 50000 -W 2 ::1 $2 &> $4/res.txt || FAIL=1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
@@ -102,8 +102,8 @@ function test_charge() {
     sleep 1
     for i in {1..1000}
     do
-        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null || FAIL=1
-        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
+        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null
+        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null &
     done
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
@@ -118,8 +118,8 @@ function test_memoir() {
     sleep 1
     for i in {1..1000}
     do
-        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null || FAIL=1
-        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null || FAIL=1 &
+        echo "$i|123,456|toto.fr" | nc -u6 -p 50000 -W 1 ::1 $2 &> /dev/null
+        echo "ack|$i" | nc -u6 -p 50000 -w 1 ::1 $2 &> /dev/null &
     done
     sleep 1
     echo stop >&"${serv[1]}"
