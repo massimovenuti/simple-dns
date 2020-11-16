@@ -1,3 +1,10 @@
+/**
+ * @file mytime.c
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Gestion du temps - fichier source
+ * @date 2020-11-16
+ * 
+ */
 #include "mytime.h"
 
 struct timeval new_timeval(time_t sec, time_t usec) {
@@ -5,7 +12,7 @@ struct timeval new_timeval(time_t sec, time_t usec) {
     return t;
 }
 
-struct timeval new_cooldown(int sec, int usec) {
+struct timeval new_countdown(int sec, int usec) {
     struct timeval t;
     gettimeofday(&t, NULL);
     t.tv_sec += sec;

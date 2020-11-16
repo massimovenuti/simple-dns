@@ -3,9 +3,8 @@
  * @author Alexandre Vogel, Massimo Venuti
  * @brief Serveur de nom DNS - fichier en-tête
  * @date 2020-11-16
- * 
+ *
  */
-
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
@@ -20,10 +19,10 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "ack.h"
+#include "lack.h"
 #include "macro.h"
 #include "parser.h"
 
@@ -33,7 +32,7 @@
 
 /**
  * @brief Traite une requête
- * 
+ *
  * Récupère une requête puis crée et envoie la réponse.
  */
 void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait);
@@ -44,9 +43,10 @@ void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait);
 bool timeout(struct ack a);
 
 /**
- * @brief 
+ * @brief Vérifie si des acquittements ont timeout
+ *
+ * Vérifie si des acquittements ont timeout et les renvoie si il y en a.
  */
-void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr);
-
+void check_ack(lack* l, int soc, struct tab_names tab_of_addr);
 
 #endif

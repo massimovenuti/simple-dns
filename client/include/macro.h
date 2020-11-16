@@ -1,5 +1,12 @@
-#ifndef __CHK_H__
-#define __CHK_H__
+/**
+ * @file macro.h
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Définition de macros
+ * @date 2020-11-16
+ * 
+ */
+#ifndef __MACRO_H__
+#define __MACRO_H__
 
 #define TCHK(exp)                  \
     do {                           \

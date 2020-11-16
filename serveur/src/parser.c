@@ -5,7 +5,6 @@
  * @date 2020-11-16
  *
  */
-
 #include "parser.h"
 
 struct tab_servers new_tab_servers() {
@@ -184,6 +183,7 @@ char *strcat_res(char *dest, size_t *len_dest, size_t *max_len_dest, char *code,
     MCHK(strcat(dest, port));
     return dest;
 }
+
 char *make_res(char *dest, struct req req, struct tab_names n, size_t *len_dest,
                size_t len_src, size_t *max_len_dest) {
     incstr(dest, len_src, max_len_dest, INCREASE_COEF);

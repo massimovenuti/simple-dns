@@ -1,3 +1,10 @@
+/**
+ * @file lreq.c
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Gestion des requêtes - fichier source
+ * @date 2020-11-16
+ * 
+ */
 #include "lreq.h"
 
 struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs) {

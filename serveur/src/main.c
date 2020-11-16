@@ -5,7 +5,6 @@
  * @date 2020-11-16
  *
  */
-
 #include "main.h"
 
 void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait) {
@@ -23,9 +22,9 @@ void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait) {
                              &len_addr)));
     req[len_req] = 0;
     if ((id = is_ack(req)) > -1) {
-        *ack_wait = lack_rm(*ack_wait, id, src_addr);
+        *ack_wait = larm(*ack_wait, id, src_addr);
     } else if ((s_req = parse_req(req)).id > -1) {
-        *ack_wait = lack_add(*ack_wait, s_req, src_addr);
+        *ack_wait = laadd(*ack_wait, s_req, src_addr);
         res =
             make_res(res, s_req, tab_of_addr, &len_res, len_req, &max_len_res);
         PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr,
@@ -43,8 +42,8 @@ bool timeout(struct ack a) {
     return timercmp(&cur_t, &a.time, >=);
 }
 
-void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr) {
-    if (lack_empty(*l)) {
+void check_ack(lack* l, int soc, struct tab_names tab_of_addr) {
+    if (laempty(*l)) {
         return;
     }
 
@@ -53,8 +52,8 @@ void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr) {
     size_t len_res;
 
     lack tmp;
-    for (tmp = *l; !lack_empty(tmp);
-         tmp = (lack_empty(tmp)) ? tmp : tmp->next) {
+    for (tmp = *l; !laempty(tmp);
+         tmp = (laempty(tmp)) ? tmp : tmp->next) {
         if (timeout(tmp->ack)) {
             res = make_res(res, tmp->ack.req, tab_of_addr, &len_res, 0,
                            &alloc_mem);
@@ -62,7 +61,7 @@ void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr) {
                         sizeof(struct sockaddr_in6)));
             tmp->ack.retry++;
             if (tmp->ack.retry > 3) {
-                *l = lack_rm(*l, tmp->ack.req.id, tmp->ack.addr);
+                *l = larm(*l, tmp->ack.req.id, tmp->ack.addr);
                 tmp = *l;
             } else {
                 PCHK(gettimeofday(&tmp->ack.time, NULL));
@@ -91,7 +90,7 @@ int main(int argc, char const* argv[]) {
 
     struct tab_names tab = parse_conf(argv[2]);
 
-    lack ack_wait = lack_new();
+    lack ack_wait = lanew();
 
     fd_set ensemble;
     bool goon = true;
@@ -115,11 +114,11 @@ int main(int argc, char const* argv[]) {
             if (!strcmp(str, "stop")) {
                 PCHK(close(soc));
                 free_tab_names(&tab);
-                lack_destroy(ack_wait);
+                ladestroy(ack_wait);
                 exit(EXIT_SUCCESS);
             }
         }
-        tchk_ack(&ack_wait, soc, tab);
+        check_ack(&ack_wait, soc, tab);
     }
 
     exit(EXIT_SUCCESS);

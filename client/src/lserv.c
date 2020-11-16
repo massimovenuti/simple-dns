@@ -1,3 +1,10 @@
+/**
+ * @file lserv.c
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Gestion des serveurs - fichier source
+ * @date 2020-11-16
+ * 
+ */
 #include "lserv.h"
 
 struct server new_server(struct sockaddr_in6 a) {

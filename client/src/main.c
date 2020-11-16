@@ -1,17 +1,11 @@
+/**
+ * @file main.h
+ * @author Massimo Venuti, Alexandre Vogel
+ * @brief Client - fichier source
+ * @date 2020-11-16
+ * 
+ */
 #include "main.h"
-
-void monitor_timeout(char *req, struct sockaddr_in6 addr, bool first_timeout) {
-    if (first_timeout) {
-        fprintf(stderr, YELLOW "%s" NEWLINE, req);
-        afprint(stderr, addr);
-        fprintf(stderr, " suspicious");
-    } else {
-        fprintf(stderr, RED "%s" NEWLINE, req);
-        afprint(stderr, addr);
-        fprintf(stderr, " timeout");
-    }
-    fprintf(stderr, RESET NEWLINE);
-}
 
 void monitor_reply(lserv *monitored, struct res res, struct sockaddr_in6 addr) {
     lserv l_serv = lssearch(*monitored, addr);
@@ -63,7 +57,16 @@ bool handle_timeout(int soc, struct req *req, struct sockaddr_in6 addr,
             first_timeout = false;
         }
         if (monitoring) {
-            monitor_timeout(req->name, addr, first_timeout);
+            if (first_timeout) {
+                fprintf(stderr, YELLOW "%s" NEWLINE, req->name);
+                afprint(stderr, addr);
+                fprintf(stderr, " suspicious");
+            } else {
+                fprintf(stderr, RED "%s" NEWLINE, req->name);
+                afprint(stderr, addr);
+                fprintf(stderr, " timeout");
+            }
+            fprintf(stderr, RESET NEWLINE);
         }
     }
 
@@ -77,7 +80,7 @@ void check_timeout(int soc, struct timeval *reset_t, lreq *reqs,
                    bool monitoring) {
     if (timeout(*reset_t, RESET_TIME)) {
         *ignored = lsrmh(*ignored);
-        *reset_t = new_cooldown(RESET_TIME, 0);
+        *reset_t = new_countdown(RESET_TIME, 0);
     }
     for (lreq tmp = *reqs; !lrempty(tmp);
          tmp = (lrempty(tmp)) ? tmp : tmp->next) {
@@ -321,7 +324,7 @@ int main(int argc, char const *argv[]) {
     struct tab_addrs roots = parse_conf(argv[1]);
     lreq reqs = lrnew();
     lserv ignored = lsnew(), suspicious = lsnew(), monitored = lsnew();
-    struct timeval reset_t = new_cooldown(RESET_TIME, 0);
+    struct timeval reset_t = new_countdown(RESET_TIME, 0);
     bool monitoring = false, goon = true;
     int id = 0;
 

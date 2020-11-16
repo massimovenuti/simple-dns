@@ -1,14 +1,13 @@
 /**
- * @file ack.c
+ * @file lack.c
  * @author Alexandre Vogel, Massimo Venuti
- * @brief Acquittements clients attendus - fichier source
+ * @brief Gestion des acquittements - fichier source
  * @date 2020-11-16
  * 
  */
+#include "lack.h"
 
-#include "ack.h"
-
-bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
+bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
     char ip1[140];
     char ip2[140];
     if (a1.sin6_family != a2.sin6_family) {
@@ -24,30 +23,30 @@ bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {
     return (a1.sin6_port == a2.sin6_port) && !strcmp(ip1, ip2);
 }
 
-lack lack_new() {
+lack lanew() {
     return NULL;
 }
 
-void lack_destroy(lack l) {
-    if (lack_empty(l)) {
+void ladestroy(lack l) {
+    if (laempty(l)) {
         return;
     }
     lack n = l->next;
     free(l);
-    lack_destroy(n);
+    ladestroy(n);
 }
 
-lack lack_add(lack l, struct req req, struct sockaddr_in6 addr) {
+lack laadd(lack l, struct req req, struct sockaddr_in6 addr) {
     lack new;
     MCHK(new = malloc(sizeof(struct s_lack)));
     new->ack.req = req;
     new->ack.addr = addr;
     new->ack.retry = 0;
     PCHK(gettimeofday(&new->ack.time, NULL));
-    new->next = lack_new();
+    new->next = lanew();
     lack tmp;
-    if (!lack_empty(l)) {
-        for (tmp = l; !lack_empty(tmp->next); tmp = tmp->next);
+    if (!laempty(l)) {
+        for (tmp = l; !laempty(tmp->next); tmp = tmp->next);
         tmp->next = new;
         return l;
     } else {
@@ -55,17 +54,17 @@ lack lack_add(lack l, struct req req, struct sockaddr_in6 addr) {
     }
 }
 
-lack lack_rm(lack l, int id, struct sockaddr_in6 addr) {
-    if (lack_empty(l)) {
-        return lack_new();
+lack larm(lack l, int id, struct sockaddr_in6 addr) {
+    if (laempty(l)) {
+        return lanew();
     }
-    if (l->ack.req.id == id && addr_cmp(l->ack.addr, addr)) {
+    if (l->ack.req.id == id && addrcmp(l->ack.addr, addr)) {
         lack n = l->next;
         free(l);
         return n;
     }
-    return lack_rm(l->next, id, addr);
+    return larm(l->next, id, addr);
 }
 
-bool lack_empty(lack l) { return l == NULL; }
+bool laempty(lack l) { return l == NULL; }
 
