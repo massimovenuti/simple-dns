@@ -1,3 +1,4 @@
+
 /**
  * @file mytime.h
  * @author Massimo Venuti, Alexandre Vogel
@@ -21,7 +22,7 @@
  *
  * Crée une structure timeval et l'initialise avec les valeurs indiquées.
  */
-struct timeval new_timeval(time_t sec, time_t usec);
+struct timeval new_timeval (time_t sec, time_t usec);
 
 /**
  * @brief Crée un compte à rebours
@@ -29,32 +30,32 @@ struct timeval new_timeval(time_t sec, time_t usec);
  * Crée une structure timeval et l'initialise avec la date courante à laquelle
  * est ajoutée sec secondes et usec microsecondes.
  */
-struct timeval new_countdown(int sec, int usec);
+struct timeval new_countdown (int sec, int usec);
 
 /**
  * @brief Teste si le temps d'une structure timeval est dépassé
  * 
  * Compare le temps indiqué par une structure timeval avec le temps courant.
  */
-bool timeout(struct timeval t, int time);
+bool timeout (struct timeval t, int time);
 
 /**
  * @brief Renvoie un temps en seconde à partir d'une structure timeval
  */
-float get_timevalue(struct timeval t);
+float get_timevalue (struct timeval t);
 
 /**
  * @brief Réalise une opération arithmétique entre deux structures timeval
  * 
  * L'opérateur peut être '+' ou '-'.
  */
-struct timeval op_timeval(struct timeval t1, struct timeval t2, char op);
+struct timeval op_timeval (struct timeval t1, struct timeval t2, char op);
 
 /**
  * @brief Réalise une opération arithmétique sur une structure timeval
  * 
  * L'opérateur peut être '*' ou '-'.
  */
-struct timeval op_ntimeval(struct timeval t, int n, char op);
+struct timeval op_ntimeval (struct timeval t, int n, char op);
 
 #endif

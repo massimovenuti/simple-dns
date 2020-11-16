@@ -1,3 +1,4 @@
+
 /**
  * @file lreq.h
  * @author Massimo Venuti, Alexandre Vogel
@@ -33,7 +34,8 @@
 /**
  * @brief Objet représentant un tableau d'adresses
  */
-struct tab_addrs {
+struct tab_addrs
+{
     struct sockaddr_in6 addrs[TABSIZE];
     int len;
 };
@@ -44,7 +46,8 @@ struct tab_addrs {
  * Caractérisée par un id, un nom à trouver, un tableau de serveurs
  * correspondant et le moment ou la requête est envoyée.
  */
-struct req {
+struct req
+{
     int id;
     char name[LNAME];
     struct tab_addrs dest_addrs;
@@ -55,10 +58,11 @@ struct req {
 /**
  * @brief Liste chaînée de requêtes
  */
-typedef struct s_lreq {
+typedef struct s_lreq
+{
     struct req req;
     struct s_lreq *next;
-} * lreq;
+} *lreq;
 
 /**
  * @brief Crée une nouvelle requête
@@ -66,7 +70,7 @@ typedef struct s_lreq {
  * Crée une nouvelle requête en fixant l'index du serveur courant
  * automatiquement pour vérifier la règle du tourniquet.
  */
-struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
+struct req *new_req (lreq * l, int id, char *name, struct tab_addrs addrs);
 
 /**
  * @brief Met à jour une requête
@@ -75,42 +79,42 @@ struct req *new_req(lreq *l, int id, char *name, struct tab_addrs addrs);
  * L'index du serveur courant est modifié automatiquement pour vérifier la règle
  * du tourniquet.
  */
-void update_req(lreq *l, struct req *req, int id, struct tab_addrs addrs);
+void update_req (lreq * l, struct req *req, int id, struct tab_addrs addrs);
 
 /**
  * @brief Récupère l'index du serveur courant d'une requête
  */
-int get_index(lreq l, struct req req);
+int get_index (lreq l, struct req req);
 
 /**
  * @brief Teste si deux adresses sont identiques
  */
-bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
+bool addrcmp (struct sockaddr_in6 a1, struct sockaddr_in6 a2);
 
 /**
  * @brief Teste si une adresse appartient à un tableau d'adresses
  */
-bool belong(struct sockaddr_in6 addr, struct tab_addrs addrs);
+bool belong (struct sockaddr_in6 addr, struct tab_addrs addrs);
 
 /**
  * @brief Créer une nouvelle liste de requêtes
  */
-lreq lrnew();
+lreq lrnew ();
 
 /**
  * @brief Libère une liste de requêtes
  */
-void lrfree(lreq l);
+void lrfree (lreq l);
 
 /**
  * @brief Ajoute une requête à une liste de requêtes
  */
-lreq lradd(lreq *l, struct req x);
+lreq lradd (lreq * l, struct req x);
 
 /**
  * @brief Supprime une requête d'une liste de requêtes
  */
-lreq lrrm(lreq l, int id);
+lreq lrrm (lreq l, int id);
 
 /**
  * @brief Cherche une requête dans une liste de requêtes
@@ -118,11 +122,11 @@ lreq lrrm(lreq l, int id);
  * Renvoie le maillon correspondant à la requête recherchée dans la liste si il
  * existe et le maillon vide (NULL) sinon.
  */
-lreq lrsearch(lreq l, int id);
+lreq lrsearch (lreq l, int id);
 
 /**
  * @brief Teste si une liste de requêtes est vide
  */
-bool lrempty(lreq l);
+bool lrempty (lreq l);
 
 #endif

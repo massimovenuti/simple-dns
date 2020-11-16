@@ -1,3 +1,4 @@
+
 /**
  * @file main.h
  * @author Alexandre Vogel, Massimo Venuti
@@ -35,18 +36,18 @@
  *
  * Récupère une requête puis crée et envoie la réponse.
  */
-void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait);
+void processes_request (int soc, struct tab_names tab_of_addr, lack * ack_wait);
 
 /**
  * @brief Teste si un acquittement est en timeout
  */
-bool timeout(struct ack a);
+bool timeout (struct ack a);
 
 /**
  * @brief Vérifie si des acquittements ont timeout
  *
  * Vérifie si des acquittements ont timeout et les renvoie si il y en a.
  */
-void check_ack(lack* l, int soc, struct tab_names tab_of_addr);
+void check_ack (lack * l, int soc, struct tab_names tab_of_addr);
 
 #endif

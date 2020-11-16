@@ -1,3 +1,4 @@
+
 /**
  * @file main.h
  * @author Massimo Venuti, Alexandre Vogel
@@ -36,7 +37,8 @@
  * Met à jour les informations d'un serveur après une réception par ce dernier
  * et affiche la réponse et le temps de réponse du serveur.
  */
-void monitor_reply(lserv *monitored, struct res res, struct sockaddr_in6 addr);
+void monitor_reply (lserv * monitored, struct res res,
+		    struct sockaddr_in6 addr);
 
 /**
  * @brief Surveille l'envoi d'une requête
@@ -44,62 +46,63 @@ void monitor_reply(lserv *monitored, struct res res, struct sockaddr_in6 addr);
  * Met à jour les informations d'un serveur après un envoi vers ce dernier et
  * affiche la requête ainsi que l'adresse du serveur.
  */
-void monitor_shipment(lserv *monitored, char *req, struct sockaddr_in6 addr);
+void monitor_shipment (lserv * monitored, char *req, struct sockaddr_in6 addr);
 
 /**
  * @brief Traite une requête qui a timeout
  */
-bool handle_timeout(int soc, struct req *req, struct sockaddr_in6 addr,
-                    lreq *reqs, lserv *ignored, lserv *suspicious,
-                    lserv *monitored, bool monitoring);
+bool handle_timeout (int soc, struct req *req, struct sockaddr_in6 addr,
+		     lreq * reqs, lserv * ignored, lserv * suspicious,
+		     lserv * monitored, bool monitoring);
 
 /**
  * @brief Vérifie si des requêtes ont timeout
  */
-void check_timeout(int soc, struct timeval *reset_t, lreq *reqs,
-                   lserv *suspicious, lserv *ignored, lserv *monitored,
-                   bool monitoring);
+void check_timeout (int soc, struct timeval *reset_t, lreq * reqs,
+		    lserv * suspicious, lserv * ignored, lserv * monitored,
+		    bool monitoring);
 
 /**
  * @brief Reçoit la réponse d'un serveur
  *
  * Envoie un acquittement au serveur après bonne réception.
  */
-struct res receive_reply(int soc, lserv *monitored, bool monitoring);
+struct res receive_reply (int soc, lserv * monitored, bool monitoring);
 
 /**
  * @brief Traite la réponse d'un serveur
  */
-void handle_reply(int soc, int *id, lreq *reqs, struct req *req, struct res res,
-                  lserv ignored, lserv *monitored, bool monitoring);
+void handle_reply (int soc, int *id, lreq * reqs, struct req *req,
+		   struct res res, lserv ignored, lserv * monitored,
+		   bool monitoring);
 
 /**
  * @brief Envoie un acquittement à un serveur
  */
-void send_ack(int soc, int id, struct sockaddr_in6 addr);
+void send_ack (int soc, int id, struct sockaddr_in6 addr);
 
 /**
  * @brief Convertit une structure req en chaîne de caractère
  */
-int reqtostr(struct req s_req, char *str_req);
+int reqtostr (struct req s_req, char *str_req);
 
 /**
  * @brief Envoie une requête à un serveur
  */
-bool send_request(int soc, struct req *s_req, lserv ignored, lserv *monitored,
-                  bool monitoring);
+bool send_request (int soc, struct req *s_req, lserv ignored, lserv * monitored,
+		   bool monitoring);
 
 /**
  * @brief Traite une nouvelle requête
  */
-void handle_request(char *input, int soc, int *id, lreq *reqs,
-                    struct tab_addrs roots, lserv ignored, lserv *monitored,
-                    bool monitoring);
+void handle_request (char *input, int soc, int *id, lreq * reqs,
+		     struct tab_addrs roots, lserv ignored, lserv * monitored,
+		     bool monitoring);
 
 /**
  * @brief Affiche la liste des commandes disponibles
  */
-void print_help();
+void print_help ();
 
 /**
  * @brief Charge un fichier de requêtes
@@ -107,28 +110,29 @@ void print_help();
  * Envoie les requêtes et commandes présentes dans un fichier de requêtes au
  * programme.
  */
-void load_reqfile(const char *path, int soc, int *id, lreq *reqs,
-                  struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
-                  lserv *monitored, bool *goon, bool *monitoring);
+void load_reqfile (const char *path, int soc, int *id, lreq * reqs,
+		   struct tab_addrs *roots, lserv * ignored, lserv * suspicious,
+		   lserv * monitored, bool *goon, bool *monitoring);
 
 /**
  * @brief Traite une commande utilisateur transmise sur l'entrée standard
  */
-void handle_command(char *command, int soc, int *id, lreq *reqs,
-                    struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
-                    lserv *monitored, bool *goon, bool *monitoring);
+void handle_command (char *command, int soc, int *id, lreq * reqs,
+		     struct tab_addrs *roots, lserv * ignored,
+		     lserv * suspicious, lserv * monitored, bool *goon,
+		     bool *monitoring);
 
 /**
  * @brief Lit l'entrée standard
  */
-void read_input(FILE *stream, int soc, int *id, lreq *reqs,
-                struct tab_addrs *roots, lserv *ignored, lserv *suspicious,
-                lserv *monitored, bool *goon, bool *monitoring);
+void read_input (FILE * stream, int soc, int *id, lreq * reqs,
+		 struct tab_addrs *roots, lserv * ignored, lserv * suspicious,
+		 lserv * monitored, bool *goon, bool *monitoring);
 
 /**
  * @brief Lit le réseau
  */
-void read_network(int soc, int *id, lreq *reqs, lserv ignored, lserv *monitored,
-                  bool monitoring);
+void read_network (int soc, int *id, lreq * reqs, lserv ignored,
+		   lserv * monitored, bool monitoring);
 
 #endif

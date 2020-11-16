@@ -1,3 +1,4 @@
+
 /**
  * @file macro.h
  * @author Alexandre Vogel, Massimo Venuti

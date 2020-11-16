@@ -1,3 +1,4 @@
+
 /**
  * @file parser.h
  * @author Alexandre Vogel, Massimo Venuti
@@ -33,7 +34,8 @@
  *
  * Caractérisé par une ip et un port.
  */
-struct server {
+struct server
+{
     char ip[IPLEN];
     char port[PORTLEN];
 };
@@ -41,7 +43,8 @@ struct server {
 /**
  * @brief Objet représentant un tableau de serveurs
  */
-struct tab_servers {
+struct tab_servers
+{
     struct server *servs;
     int max_len;
     int len;
@@ -52,7 +55,8 @@ struct tab_servers {
  *
  * Caractérisé par un nom et un tableau de serveurs associé.
  */
-struct name {
+struct name
+{
     char name[NAMELEN];
     struct tab_servers tab_servs;
 };
@@ -60,7 +64,8 @@ struct name {
 /**
  * @brief Objet représentant un tableau de noms
  */
-struct tab_names {
+struct tab_names
+{
     struct name *names;
     int max_len;
     int len;
@@ -69,7 +74,8 @@ struct tab_names {
 /**
  * @brief Objet représentant une requête client
  */
-struct req {
+struct req
+{
     int id;
     struct timeval time;
     char name[NAMELEN];
@@ -78,49 +84,49 @@ struct req {
 /**
  * @brief Crée et initialise un tableau de serveurs vide
  */
-struct tab_servers new_tab_servers();
+struct tab_servers new_tab_servers ();
 
 /**
  * @brief Crée et initialise un tableau de noms vide
  */
-struct tab_names new_tab_names();
+struct tab_names new_tab_names ();
 
 /**
  * @brief Crée un nouveau serveur représenté par une ip et un port
  */
-struct server new_server(char *ip, char *port);
+struct server new_server (char *ip, char *port);
 
 /**
  * @brief Crée un nouveau nom avec un tableau de serveurs associé
  */
-struct name new_name(char *name, struct tab_servers servs);
+struct name new_name (char *name, struct tab_servers servs);
 
 /**
  * @brief Libère un tableau de serveurs
  */
-void free_tab_servers(struct tab_servers *s);
+void free_tab_servers (struct tab_servers *s);
 
 /**
  * @brief Libère un tableau de noms
  */
-void free_tab_names(struct tab_names *n);
+void free_tab_names (struct tab_names *n);
 
 /**
  * @brief Ajoute un nom à un tableau de noms
  */
-void add_name(struct tab_names *tn, struct name n);
+void add_name (struct tab_names *tn, struct name n);
 
 /**
  * @brief Ajoute un serveur à un tableau de serveurs
  */
-void add_server(struct tab_servers *ts, struct server s);
+void add_server (struct tab_servers *ts, struct server s);
 
 /**
  * @brief Renvoie l'indice d'un nom dans un tableau de noms
  *
  * Si le nom n'appartient pas au tableau de noms, la fonction renvoie -1.
  */
-int search_name(struct tab_names n, char *name);
+int search_name (struct tab_names n, char *name);
 
 /**
  * @brief Augmente la taille mémoire d'un tableau
@@ -136,7 +142,7 @@ int search_name(struct tab_names n, char *name);
  * @return true Si la taille mémoire de dest a été augmentée
  * @return false Sinon
  */
-void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef);
+void *inctab (void *dest, int len, int *max_len, size_t size_elem, int coef);
 
 /**
  * @brief Augmente la taille mémoire d'une chaîne de caractères
@@ -151,7 +157,7 @@ void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef);
  * @return true Si la taille mémoire de dest a été augmentée
  * @return false Sinon
  */
-char *incstr(char *dest, size_t len, size_t *max_len, int coef);
+char *incstr (char *dest, size_t len, size_t *max_len, int coef);
 
 /**
  * @brief Compare deux chaînes de caractères
@@ -161,7 +167,7 @@ char *incstr(char *dest, size_t len, size_t *max_len, int coef);
  *
  * Exemple: compare("fr", ".fr") renvoie vrai
  */
-bool compare(char *s1, char *s2);
+bool compare (char *s1, char *s2);
 
 /**
  * @brief Parse un fichier de configuration
@@ -169,26 +175,26 @@ bool compare(char *s1, char *s2);
  * Renvoie la liste des noms et serveurs associés d'un fichier de configuration
  * sous la forme d'un tableau de noms.
  */
-struct tab_names parse_conf(const char *file_name);
+struct tab_names parse_conf (const char *file_name);
 
 /**
  * @brief Parse une requête
  *
  * Parse une requête de la forme <id>|<time>|<nom>
  */
-struct req parse_req(char *src);
+struct req parse_req (char *src);
 
 /**
  * @brief Teste si une chaîne de caractères est un acquittement
  */
-int is_ack(char str[]);
+int is_ack (char str[]);
 
 /**
  * @brief Construit la réponse à une requête
  *
  * Construit une réponse de la forme <req>|<code>|[<result>]
  */
-char *make_res(char *dest, struct req req, struct tab_names n, size_t *len_dest,
-               size_t len_src, size_t *max_len_dest);
+char *make_res (char *dest, struct req req, struct tab_names n,
+		size_t *len_dest, size_t len_src, size_t *max_len_dest);
 
 #endif

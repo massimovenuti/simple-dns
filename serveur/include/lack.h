@@ -1,3 +1,4 @@
+
 /**
  * @file lack.h
  * @author Alexandre Vogel, Massimo Venuti
@@ -23,7 +24,8 @@
 /**
  * @brief Objet représentant un acquittement client attendu
  */
-struct ack {
+struct ack
+{
     struct req req;
     struct sockaddr_in6 addr;
     struct timeval time;
@@ -33,39 +35,40 @@ struct ack {
 /**
  * @brief Liste chainée d'acquittements
  */
-typedef struct s_lack {
+typedef struct s_lack
+{
     struct ack ack;
     struct s_lack *next;
-} * lack;
+} *lack;
 
 /**
  * @brief Crée une nouvelle liste d'acquittements
  */
-lack lanew();
+lack lanew ();
 
 /**
  * @brief Libère une liste d'acquittements
  */
-void ladestroy(lack l);
+void ladestroy (lack l);
 
 /**
  * @brief Ajoute un acquittement à une liste d'acquittements
  */
-lack laadd(lack l, struct req req, struct sockaddr_in6 addr);
+lack laadd (lack l, struct req req, struct sockaddr_in6 addr);
 
 /**
  * @brief Supprime un acquittement d'une liste d'acquittements
  */
-lack larm(lack l, int id, struct sockaddr_in6 addr);
+lack larm (lack l, int id, struct sockaddr_in6 addr);
 
 /**
  * @brief Teste si une liste d'acquittements est vide
  */
-bool laempty(lack l);
+bool laempty (lack l);
 
 /**
  * @brief Teste si deux addresses sont identiques
  */
-bool addrcmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2);
+bool addrcmp (struct sockaddr_in6 a1, struct sockaddr_in6 a2);
 
 #endif
