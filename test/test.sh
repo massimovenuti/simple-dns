@@ -21,7 +21,7 @@ function fail () # erreur
 function test_resolve() {
     debut_test 1 "Test de resolution"
     python3 $1 1 | grep "riri.toto.fr ::1:8080" > /dev/null || fail "Demande de resolution simple"
-    python3 $1 2 | grep "fifi.fr NOT FOUND" > /dev/null || fail "Demande de resolution simple"
+    python3 $1 2 | grep "fifi.fr NOT FOUND" > /dev/null || fail "Pas de resulta"
     python3 $1 3 | grep "riri.toto.fr ::1:8080" > /dev/null || fail "Demande de resolution avec fichier"
     fin_test 
 }
