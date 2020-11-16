@@ -1,20 +1,23 @@
-all: client-build serveur-build
+all: client serveur
 
-client-build:
+.PHONY:client
+client:
 	(cd client; make)
 
-serveur-build:
+.PHONY:serveur
+:
 	(cd serveur; make)
 
+.PHONY:test
 test: test-client test-serveur
 	echo "Test Global"
 	./test/test.sh
 
-test-client: client-build
+test-client: client
 	echo "Test Client"
 	(cd client; make test)
 
-test-serveur: serveur-build
+test-serveur: serveur
 	echo "Test Serveur"
 	(cd serveur; make test)
 
