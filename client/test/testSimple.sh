@@ -45,6 +45,55 @@ function test_run() {
     fin_test
 }
 
+function test_comande() {
+    debut_test 4 "Test des comande"
+    local FAIL=0
+    coproc client ( $1 $2 &> /dev/null )
+    echo !monitoring >&"${client[1]}"
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test !monitoring"
+
+    local FAIL=0
+    coproc client ( $1 $2 &> /dev/null )
+    echo !reset >&"${client[1]}"
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test !reset"
+
+    local FAIL=0
+    coproc client ( $1 $2 &> /dev/null )
+    echo !status >&"${client[1]}"
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test !status"
+
+    local FAIL=0
+    coproc client ( $1 $2 &> /dev/null )
+    echo !loadconf >&"${client[1]}"
+    sleep 1
+    echo "./samples/test2.conf" >&"${client[1]}"
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test !loadconf"
+
+    local FAIL=0
+    coproc client ( $1 $2 &> /dev/null )
+    echo !loadreq >&"${client[1]}"
+    sleep 1
+    echo "./samples/test/comande.txt" >&"${client[1]}"
+    sleep 1
+    echo !stop >&"${client[1]}"
+    wait ${client_PID} || FAIL=1
+    test $FAIL -eq 0 || fail "test !loadreq"
+
+    fin_test
+}
+
 EXE=./bin/client
 CONF=./samples/test1.conf
 TMPDIR=tmp
@@ -54,7 +103,7 @@ mkdir $TMPDIR
 test_bad_arg $EXE
 test_bad_file $EXE
 test_run $EXE $CONF
-test_memoir  $EXE $CONF
+test_comande $EXE $CONF
 
 rmdir $TMPDIR
 

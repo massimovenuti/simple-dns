@@ -5,7 +5,7 @@ client:
 	(cd client; make)
 
 .PHONY:serveur
-:
+serveur:
 	(cd serveur; make)
 
 .PHONY:test
