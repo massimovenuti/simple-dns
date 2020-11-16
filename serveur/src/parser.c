@@ -30,23 +30,6 @@ struct name new_name(char *name, struct tab_servers servs) {
     return res;
 }
 
-/*
-struct server new_server() {
-    struct server res;
-    *res.ip = '\0';
-    *res.port = '\0';
-    return res;
-}
-
-struct name new_name() {
-    struct name n;
-    *n.name = '\0';
-    n.tab_servs = new_tab_servers();
-    return n;
-}
-
-*/
-
 void free_tab_servers(struct tab_servers *s) {
     free(s->servs);
 }
@@ -78,30 +61,6 @@ void add_server(struct tab_servers *ts, struct server s) {
     ts->len += 1;
 }
 
-/*
-void add_name(struct tab_names *n, char *name, struct tab_servers tab_servs) {
-    if (n == NULL) {
-        return;
-    }
-    n->names = inctab(n->names, n->len + 1, &n->max_len, sizeof(struct name), INCREASE_COEF);
-    strcpy(n->names[n->len].name, name);
-    n->names[n->len].tab_servs = tab_servs;
-    n->names[n->len + 1] = new_name();
-    n->len++;
-}
-
-void add_server(struct tab_servers *s, char *ip, char *port) {
-    if (s == NULL) {
-        return;
-    }
-    s->servs = inctab(s->servs, s->len + 1, &s->max_len, sizeof(struct server), INCREASE_COEF);
-    MCHK(strcpy(s->servs[s->len].ip, ip));
-    MCHK(strcpy(s->servs[s->len].port, port));
-    s->servs[s->len + 1] = new_server();
-    s->len++;
-}
-*/
-
 int search_name(struct tab_names n, char *name) {
     for (int tmp = 0; tmp < n.len; tmp++) {
         if (compare(name, n.names[tmp].name)) {
@@ -111,7 +70,6 @@ int search_name(struct tab_names n, char *name) {
     return -1;
 }
 
-// augmente la taille d'un tableau quelconque en fonction de len
 void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef) {
     if (len >= *max_len) {
         if (*max_len == 0) {
@@ -170,16 +128,6 @@ struct tab_names parse_conf(const char *file_name) {
     return n;
 }
 
-/**
- * @brief Parse une requête
- *
- * Extrait le la partie "nom" d'une requête.
- *
- * @param dest Chaîne qui va contenir le résultat - doit être allouée
- * @param src Chaîne représentant la requête à parser
- * @return true Si succès
- * @return false Sinon
- */
 struct req parse_req(char *src) {
     struct req res;
     if (sscanf(src, " %d | %ld,%ld | %[^|- ]", &res.id, &res.time.tv_sec, &res.time.tv_usec,

@@ -49,36 +49,120 @@ struct req {
     char name[NAMELEN];
 };
 
+/**
+ * @brief Crée et initialise un tableau de serveurs vide
+ */
 struct tab_servers new_tab_servers();
 
+/**
+ * @brief Crée et initialise un tableau de noms vide
+ */
 struct tab_names new_tab_names();
 
-struct server new_server();
+/**
+ * @brief Crée un nouveau serveur représenté par une ip et un port
+ */
+struct server new_server(char *ip, char *port);
 
-struct name new_name();
+/**
+ * @brief Crée un nouveau nom avec un tableau de serveurs associé
+ */
+struct name new_name(char *name, struct tab_servers servs);
 
+/**
+ * @brief Libère un tableau de serveurs
+ */
 void free_tab_servers(struct tab_servers *s);
 
+/**
+ * @brief Libère un tableau de noms
+ */
 void free_tab_names(struct tab_names *n);
 
+/**
+ * @brief Ajoute un nom à un tableau de noms
+ */
 void add_name(struct tab_names *tn, struct name n);
 
+/**
+ * @brief Ajoute un serveur à un tableau de serveurs
+ */
 void add_server(struct tab_servers *ts, struct server s);
 
+/**
+ * @brief Renvoie l'indice d'un nom dans un tableau de noms
+ *
+ * Si le nom n'appartient pas au tableau de noms, la fonction renvoie -1.
+ */
 int search_name(struct tab_names n, char *name);
 
+/**
+ * @brief Augmente la taille mémoire d'un tableau
+ *
+ * Augmente la taille mémoire d'un tableau d'éléments quelconques avec une
+ * taille souhaitée. Si la taille souhaitée est plus petite que la taille
+ * actuelle du tableau, rien n'est modifié.
+ *
+ * @param dest Tableau à tester
+ * @param len Nouvelle taille souhaitée
+ * @param max_len Taille maximale de dest - modifiée par effet de bord
+ * @param size_elem Taille d'un élément du tableau
+ * @return true Si la taille mémoire de dest a été augmentée
+ * @return false Sinon
+ */
 void *inctab(void *dest, int len, int *max_len, size_t size_elem, int coef);
 
+/**
+ * @brief Augmente la taille mémoire d'une chaîne de caractères
+ *
+ * Augmente la taille mémoire d'une chaîne de caractères avec une taille
+ * souhaitée. Si la taille souhaitée est plus petite que la taille actuelle de
+ * la chaîne, rien n'est modifié.
+ *
+ * @param dest Chaîne de caractères à tester
+ * @param len Nouvelle taille souhaitée
+ * @param max_len Taille maximale de dest - modifiée par effet de bord
+ * @return true Si la taille mémoire de dest a été augmentée
+ * @return false Sinon
+ */
 char *incstr(char *dest, size_t len, size_t *max_len, int coef);
 
+/**
+ * @brief Compare deux chaînes de caractères
+ * 
+ * Test si deux chaînes de caractères sont identiques sans prendre en compte un
+ * éventuel caractère "." devant la seconde chaîne.
+ * 
+ * Exemple: compare("fr", ".fr") renvoie vrai 
+ */
 bool compare(char *s1, char *s2);
 
+/**
+ * @brief Parse un fichier de configuration
+ *
+ * Renvoie la liste des noms et serveurs associés d'un fichier de configuration
+ * sous la forme d'un tableau de noms.
+ */
 struct tab_names parse_conf(const char *file_name);
 
+/**
+ * @brief Parse une requête
+ *
+ * Parse une requête de la forme <id>|<time>|<nom>
+ */
 struct req parse_req(char *src);
 
+/**
+ * @brief Teste si une chaîne de caractères est un acquittement
+ */
 int is_ack(char str[]);
 
-char *make_res(char *dest, struct req req, struct tab_names n, size_t *len_dest, size_t len_src, size_t *max_len_dest);
+/**
+ * @brief Construit la réponse à une requête
+ *
+ * Construit une réponse de la forme <req>|<code>|[<result>]
+ */
+char *make_res(char *dest, struct req req, struct tab_names n, size_t *len_dest,
+               size_t len_src, size_t *max_len_dest);
 
 #endif
