@@ -1,11 +1,13 @@
+/**
+ * @file main.c
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Serveur de nom DNS - fichier source
+ * @date 2020-11-16
+ *
+ */
+
 #include "main.h"
 
-/**
- * @brief 
- * 
- * @param arg 
- * @return void* 
- */
 void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait) {
     struct sockaddr_in6 src_addr;
     char req[REQLEN];
@@ -17,14 +19,17 @@ void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait) {
     struct req s_req;
     int id;
 
-    PCHK((len_req = recvfrom(soc, req, 512, 0, (struct sockaddr*)&src_addr, &len_addr)));
+    PCHK((len_req = recvfrom(soc, req, 512, 0, (struct sockaddr*)&src_addr,
+                             &len_addr)));
     req[len_req] = 0;
     if ((id = is_ack(req)) > -1) {
         *ack_wait = lack_rm(*ack_wait, id, src_addr);
     } else if ((s_req = parse_req(req)).id > -1) {
         *ack_wait = lack_add(*ack_wait, s_req, src_addr);
-        res = make_res(res, s_req, tab_of_addr, &len_res, len_req, &max_len_res);
-        PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr, len_addr));
+        res =
+            make_res(res, s_req, tab_of_addr, &len_res, len_req, &max_len_res);
+        PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&src_addr,
+                    len_addr));
     }
     free(res);
 
@@ -48,10 +53,13 @@ void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr) {
     size_t len_res;
 
     lack tmp;
-    for (tmp = *l; !lack_empty(tmp); tmp = (lack_empty(tmp)) ? tmp : tmp->next) {
+    for (tmp = *l; !lack_empty(tmp);
+         tmp = (lack_empty(tmp)) ? tmp : tmp->next) {
         if (timeout(tmp->ack)) {
-            res = make_res(res, tmp->ack.req, tab_of_addr, &len_res, 0, &alloc_mem);
-            PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&tmp->ack.addr, sizeof(struct sockaddr_in6)));
+            res = make_res(res, tmp->ack.req, tab_of_addr, &len_res, 0,
+                           &alloc_mem);
+            PCHK(sendto(soc, res, len_res, 0, (struct sockaddr*)&tmp->ack.addr,
+                        sizeof(struct sockaddr_in6)));
             tmp->ack.retry++;
             if (tmp->ack.retry > 3) {
                 *l = lack_rm(*l, tmp->ack.req.id, tmp->ack.addr);

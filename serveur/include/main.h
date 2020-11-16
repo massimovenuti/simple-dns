@@ -1,3 +1,11 @@
+/**
+ * @file main.h
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Serveur de nom DNS - fichier en-tête
+ * @date 2020-11-16
+ * 
+ */
+
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
@@ -22,5 +30,23 @@
 #define REQLEN 512
 #define RESLEN 1024
 #define TIMEOUT 5
+
+/**
+ * @brief Traite une requête
+ * 
+ * Récupère une requête puis crée et envoie la réponse.
+ */
+void processes_request(int soc, struct tab_names tab_of_addr, lack* ack_wait);
+
+/**
+ * @brief Teste si un acquittement est en timeout
+ */
+bool timeout(struct ack a);
+
+/**
+ * @brief 
+ */
+void tchk_ack(lack* l, int soc, struct tab_names tab_of_addr);
+
 
 #endif

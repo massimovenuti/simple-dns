@@ -1,3 +1,11 @@
+/**
+ * @file ack.c
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Acquittements clients attendus - fichier source
+ * @date 2020-11-16
+ * 
+ */
+
 #include "ack.h"
 
 bool addr_cmp(struct sockaddr_in6 a1, struct sockaddr_in6 a2) {

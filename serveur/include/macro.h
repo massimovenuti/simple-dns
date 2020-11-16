@@ -1,3 +1,11 @@
+/**
+ * @file macro.h
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Définition de macros
+ * @date 2020-11-16
+ *
+ */
+
 #ifndef __MACRO_H__
 #define __MACRO_H__
 

@@ -1,3 +1,11 @@
+/**
+ * @file parser.h
+ * @author Alexandre Vogel, Massimo Venuti
+ * @brief Parser côté serveur - fichier en-tête
+ * @date 2020-11-16
+ *
+ */
+
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
@@ -21,28 +29,47 @@
 #define SEPARATOR "|"
 #define SUBSEPARATOR ","
 
+/**
+ * @brief Objet représentant un serveur
+ *
+ * Caractérisé par une ip et un port.
+ */
 struct server {
     char ip[IPLEN];
     char port[PORTLEN];
 };
 
+/**
+ * @brief Objet représentant un tableau de serveurs
+ */
 struct tab_servers {
     struct server *servs;
     int max_len;
     int len;
 };
 
+/**
+ * @brief Objet représentant un nom
+ *
+ * Caractérisé par un nom et un tableau de serveurs associé.
+ */
 struct name {
     char name[NAMELEN];
     struct tab_servers tab_servs;
 };
 
+/**
+ * @brief Objet représentant un tableau de noms
+ */
 struct tab_names {
     struct name *names;
-    int len;
     int max_len;
+    int len;
 };
 
+/**
+ * @brief Objet représentant une requête client
+ */
 struct req {
     int id;
     struct timeval time;
@@ -129,11 +156,11 @@ char *incstr(char *dest, size_t len, size_t *max_len, int coef);
 
 /**
  * @brief Compare deux chaînes de caractères
- * 
+ *
  * Test si deux chaînes de caractères sont identiques sans prendre en compte un
  * éventuel caractère "." devant la seconde chaîne.
- * 
- * Exemple: compare("fr", ".fr") renvoie vrai 
+ *
+ * Exemple: compare("fr", ".fr") renvoie vrai
  */
 bool compare(char *s1, char *s2);
 
