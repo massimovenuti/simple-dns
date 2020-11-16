@@ -26,22 +26,22 @@ function test_bad_arg() {
 }
 
 function test_bad_file() {
-    debut_test 2 "Test d'existance de conf"
+    debut_test 2 "Test d'existence de conf"
     $1 inexistant &> /dev/null
-    test $? -eq 1 || fail "Appel avec conf inexistant"
+    test $? -eq 1 || fail "Appel avec conf inexistante"
     $1 ./samples/bad.conf &> /dev/null
     test $? -eq 1 || fail "Appel avec une mauvaise conf"
     fin_test
 }
 
 function test_run() {
-    debut_test 3 "Test d'execution"
+    debut_test 3 "Test d'exécution"
     local FAIL=0
     coproc client ( $1 $2 )
     sleep 1
     echo !stop >&"${client[1]}"
     wait ${client_PID} || FAIL=1
-    test $FAIL -eq 0 || fail "execution simple"
+    test $FAIL -eq 0 || fail "exécution simple"
     fin_test
 }
 

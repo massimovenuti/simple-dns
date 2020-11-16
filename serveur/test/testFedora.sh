@@ -26,27 +26,27 @@ function test_bad_arg() {
 }
 
 function test_bad_file() {
-    debut_test 2 "Test d'existance de conf"
+    debut_test 2 "Test d'existence de conf"
     $1 $2 inexistant &> /dev/null
-    test $? -eq 1 || fail "Appel avec conf inexistant"
+    test $? -eq 1 || fail "Appel avec conf inexistante"
     $1 $2 ./samples/bad.conf &> /dev/null
     test $? -eq 1 || fail "Appel avec une mauvaise conf"
     fin_test
 }
 
 function test_run() {
-    debut_test 3 "Test d'execution"
+    debut_test 3 "Test d'exécution"
     local FAIL=0
     coproc serv ( $1 $2 $3 )
     sleep 1
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
-    test $FAIL -eq 0 || fail "execution"
+    test $FAIL -eq 0 || fail "exécution"
     fin_test
 }
 
 function test_req() {
-    debut_test 4 "Test de requet"
+    debut_test 4 "Test de requête"
     
     printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060\0" > $4/wait.txt
 
@@ -59,7 +59,7 @@ function test_req() {
     wait ${serv_PID}
 
     diff $4/wait.txt $4/res.txt
-    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV4"
+    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'une requête IPV4"
 
     coproc serv ( $1 $2 $3 )
     sleep 1
@@ -69,7 +69,7 @@ function test_req() {
     wait ${serv_PID} || FAIL=1
 
     diff $4/wait.txt $4/res.txt
-    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'un requet IPV6"
+    test $? -eq 0 -a $FAIL -eq 0 || fail "envoi d'une requête IPV6"
 
     coproc serv ( $1 $2 $3 &> /dev/null )
     sleep 1
@@ -77,7 +77,7 @@ function test_req() {
     echo stop >&"${serv[1]}"
     wait ${serv_PID} || FAIL=1
 
-    test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requet invalide"
+    test ! -s $4/res.txt -a $FAIL -eq 0 || fail "envoi d'une requête invalide"
 
     printf "1|123,456|toto.fr\n|1|.fr,10.0.0.1,7575|.fr,127.0.0.1,6060|.fr,::1,6060\0" >> $4/wait.txt
 
@@ -113,7 +113,7 @@ function test_charge() {
 }
 
 function test_memoir() {
-    debut_test 6 "Test de memoir"
+    debut_test 6 "Test de mémoire"
     local FAIL=0
     coproc serv ( valgrind --leak-check=full --undef-value-errors=no --error-exitcode=1 $1 $2 $3 &> /dev/null)
     sleep 1
@@ -125,7 +125,7 @@ function test_memoir() {
     sleep 1
     echo stop >&"${serv[1]}"
     wait ${serv_PID}  || FAIL=1
-    test $FAIL -eq 0 || fail "Test de memoir"
+    test $FAIL -eq 0 || fail "test de mémoire"
     fin_test
 }
 
